@@ -72,6 +72,7 @@ export default class CreatePost extends React.Component {
         this.hidePostDeletedModal = this.hidePostDeletedModal.bind(this);
         this.showShortcuts = this.showShortcuts.bind(this);
         this.handleEmojiClick = this.handleEmojiClick.bind(this);
+        this.handleGifClick = this.handleGifClick.bind(this);
         this.handlePostError = this.handlePostError.bind(this);
         this.hideNotifyAllModal = this.hideNotifyAllModal.bind(this);
         this.showNotifyAllModal = this.showNotifyAllModal.bind(this);
@@ -99,6 +100,7 @@ export default class CreatePost extends React.Component {
             showPostDeletedModal: false,
             enableSendButton: false,
             showEmojiPicker: false,
+            showGifPicker: false,
             showConfirmModal: false,
             totalMembers: members
         };
@@ -114,8 +116,16 @@ export default class CreatePost extends React.Component {
         this.setState({showEmojiPicker: !this.state.showEmojiPicker});
     }
 
+    toggleGifPicker = () => {
+        this.setState({showGifPicker: !this.state.showGifPicker});
+    }
+
     hideEmojiPicker = () => {
         this.setState({showEmojiPicker: false});
+    }
+
+    hideGifPicker = () => {
+        this.setState({showGifPicker: false});
     }
 
     doSubmit(e) {
@@ -602,6 +612,10 @@ export default class CreatePost extends React.Component {
         this.focusTextbox();
     }
 
+    handleGifClick(gif) {
+        this.setState({showGifPicker: false});
+    }
+
     createTutorialTip() {
         const screens = [];
 
@@ -741,6 +755,15 @@ export default class CreatePost extends React.Component {
             );
         }
 
+        let gifPicker = null;
+        if (window.mm_config.EnableGifPicker === 'true') {
+            gifPicker = (
+                <span className='emoji-picker__container'>
+                    <span onClick={this.toggleEmojiPicker}>GIF</span>
+                </span>
+            );
+        }
+
         return (
             <form
                 id='create_post'
@@ -772,6 +795,7 @@ export default class CreatePost extends React.Component {
                             >
                                 {fileUpload}
                                 {emojiPicker}
+                                {gifPicker}
                                 <a
                                     className={sendButtonClass}
                                     onClick={this.handleSubmit}
