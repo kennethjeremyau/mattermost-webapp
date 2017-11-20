@@ -1,0 +1,68 @@
+.color-picker {
+  height: 3rem;
+  padding: 1rem 2rem;
+  position: relative;
+
+  .bar {
+    border: 0.1rem solid #E4E5E5;
+    border-radius: 1rem;
+    height: 1rem;
+    left: 6rem;
+    position: absolute;
+    right: 7.5rem;
+    top: 1rem;
+  }
+
+  .slider {
+    background-color: #000;
+    border: 0.2rem solid #E4E5E5;
+    border-radius: 3rem;
+    left: 6rem;
+    height: 3rem;
+    position: absolute;
+    top: 0;
+    width: 3rem;
+  }
+
+  .trash-can-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6rem;
+    height: 3rem;
+
+    .trash-can {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translateX(-50%) translateY(-50%);
+    }
+  }
+
+  .send-button-container {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 6rem;
+    height: 3rem;
+
+    .send-button {
+      background-color: #3186F7;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: 2.5rem 2.5rem;
+      border-radius: 2.2rem;
+      height: 4.4rem;
+      left: 50%;
+      position: absolute;
+      top: 50%;
+      transition: background-color 0.5s ease-out;
+      transform: translateX(-50%) translateY(-50%);
+      width: 4.4rem;
+    }
+
+    .send-button-sending {
+      background-color: #d8d8d8;
+    }
+  }
+}

@@ -1,0 +1,86 @@
+.search-bar {
+  position: relative;
+  width: 100%;
+  padding: .8rem 1.2rem 0;
+  box-sizing: border-box;
+
+  .search-input {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 3.3rem;
+    padding: 0 3.5rem;
+    font-size: 1.6rem;
+    color: #a0a0a0;
+    border-radius: .6rem;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    z-index: 1;
+    background-color: transparent;
+  }
+
+  // Hide IE input clear button
+  .search-input::-ms-clear {
+    display: none;
+  }
+
+  .search-input-bg {
+    position: absolute;
+    width: calc(100% - 2.4rem);
+    height: 3.3rem;
+    background-color: #ffffff;
+    border-radius: .6rem;
+  }
+
+  .placeholder {
+    position: absolute;
+    top: 1.6rem;
+    left: 4.6rem;
+    color: #a0a0a0
+  }
+
+  .ic {
+    position: absolute;
+    top: calc(50% - .3rem);
+  }
+
+  .ic-clear-search, .ic-search {
+    top: 1rem;
+    width: 3rem;
+    height: 3rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    position: absolute;
+    z-index: 1;
+  }
+
+  .ic-clear-search {
+    right: 1.3rem;
+  }
+  .ic-search {
+    left: 1.3rem;
+  }
+}
+
+.search-form .submit-button {
+  display: none;
+}
+
+.mattermost .search-bar {
+  background: #2475ff;
+}
+
+.facebook {
+  .search-bar {
+    background-color: #F8F8F8;
+
+    .search-input {
+      color: black;
+      border: 0.1rem solid #DEDEDE;
+      -webkit-appearance: none;
+    }
+  }
+}

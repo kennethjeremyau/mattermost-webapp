@@ -10,6 +10,7 @@ import PostDeletedModal from './post_deleted_modal.jsx';
 import TutorialTip from './tutorial/tutorial_tip.jsx';
 import EmojiPickerOverlay from 'components/emoji_picker/emoji_picker_overlay.jsx';
 import * as EmojiPicker from 'components/emoji_picker/emoji_picker.jsx';
+import GifPickerOverlay from 'components/gif_picker/gif_picker_overlay.jsx';
 
 import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
 import * as GlobalActions from 'actions/global_actions.jsx';
@@ -612,7 +613,7 @@ export default class CreatePost extends React.Component {
         this.focusTextbox();
     }
 
-    handleGifClick(gif) {
+    handleGifClick() {
         this.setState({showGifPicker: false});
     }
 
@@ -758,8 +759,17 @@ export default class CreatePost extends React.Component {
         let gifPicker = null;
         if (window.mm_config.EnableGifPicker === 'true') {
             gifPicker = (
-                <span className='emoji-picker__container'>
-                    <span onClick={this.toggleEmojiPicker}>GIF</span>
+                <span className='gif-picker__container'>
+                    <GifPickerOverlay
+                        show={this.state.showGifPicker}
+                        container={this.props.getChannelView}
+                        target={this.getCreatePostControls}
+                        onHide={this.hideGifPicker}
+                        onGifClick={this.handleGifClick}
+                        rightOffset={15}
+                        topOffset={-7}
+                    />
+                    <span onClick={this.toggleGifPicker}>{'GIF'}</span>
                 </span>
             );
         }
