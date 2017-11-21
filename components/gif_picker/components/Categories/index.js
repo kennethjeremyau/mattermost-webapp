@@ -72,7 +72,7 @@ export class Categories extends Component {
   }
 
   render() {
-    const { tagsList, webpSupported, gifs, appProps, onSearch, onTrending, saveSearchBarText } = this.props
+    const { tagsList, webpSupported, gifs, appProps, onSearch, onTrending, saveSearchBarText, searchTextUpdate } = this.props
 
     const content = tagsList && tagsList.length ? this.filterTagsList(tagsList).map((item, index) => {
       const { tagName, gfyId } = item
@@ -85,10 +85,14 @@ export class Categories extends Component {
       const webpUrl = `https://thumbs.gfycat.com/${gfyName}.webp`
       const backgroundImage = { backgroundImage: webpSupported ? `url(${webpUrl})` : `url(${max1mbGif})` }
       const backgroundColor = { backgroundColor: avgColor }
-      const callback = searchText === 'trending' ? onTrending : () => {
-          saveSearchBarText(tagName)
+      const callback = () => {
           searchTextUpdate(tagName)
-          onSearch()
+          saveSearchBarText(tagName)
+          if (searchText === 'trending') {
+              onTrending()
+          } else {
+              onSearch()
+          }
       }
       return (
         <CustomLink callback={callback} key={index} enableHistory={appProps.enableHistory}>
