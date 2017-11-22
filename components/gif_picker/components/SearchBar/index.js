@@ -31,22 +31,14 @@ export class SearchBar extends Component {
 
   componentWillReceiveProps(nextProps) {
     const { tagsDict } = this.props
-    const { location } = nextProps
+    const { searchBarText } = nextProps
 
-    // route changed
-    if (this.props.location !== location) {
+    if (this.props.searchBarText !== searchBarText) {
       // empty input for trending or reactions
-      if (location.indexOf('search') === -1) {
+      if (searchBarText === 'trending') {
         this.updateSearchInputValue('')
       } else {
-        const searchBarCurrentText = this.parseSearchText(this.searchInput.value)
-        const pathSearchText = this.getSearchTextFromPath(location)
-
-        // update text after click on a filtered category
-        if (tagsDict[pathSearchText] &&
-            pathSearchText !== this.removeExtraSpaces(this.searchInput.value)) {
-          this.updateSearchInputValue(pathSearchText)
-        }
+        this.updateSearchInputValue(searchBarText)
       }
     }
   }
