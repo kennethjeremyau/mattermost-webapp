@@ -33,9 +33,11 @@ export class Trending extends Component {
   }
 
   render() {
+    const { handleItemClick } = this.props
     return (
       <SearchGrid
         keyword="trending"
+        handleItemClick={handleItemClick}
         loadMore={this.loadMore}
       />
     )

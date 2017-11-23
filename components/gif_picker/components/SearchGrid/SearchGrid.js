@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { Link, browserHistory } from 'react-router'
-import { sendEvent } from 'components/gif_picker/components/Analytics'
+//import { sendEvent } from 'components/gif_picker/components/Analytics'
 
 // TODO: move to SearchGrid reducer?
 import { saveSearchScrollPosition } from 'mattermost-redux/actions/gifs'
@@ -26,13 +26,14 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = ({
   saveSearchScrollPosition,
-  sendEvent
+//  sendEvent
 })
 
 export class SearchGrid extends Component {
   static propTypes = {
     containerClassName: PropTypes.string,
     keyword: PropTypes.string, // searchText, tagName
+    handleItemClick: PropTypes.func,
     loadMore: PropTypes.func,
     numberOfColumns: PropTypes.number,
     scrollPosition: PropTypes.number
@@ -93,18 +94,18 @@ export class SearchGrid extends Component {
   }
 
   itemClickHandler = gfyItem => {
-    const { appProps, saveSearchScrollPosition, sendEvent, keyword } = this.props
+    const { appProps, saveSearchScrollPosition, sendEvent, keyword, handleItemClick } = this.props
     saveSearchScrollPosition(this.scrollPosition)
 
-    sendEvent({
+/*    sendEvent({
       event: appProps.shareEvent,
       params: {
         gfyid: gfyItem.gfyId,
         app_id: appProps.appId,
         keyword: keyword
       }
-    })
-    appProps.shareActions.share({gfyItem: gfyItem})
+    })*/
+    handleItemClick(gfyItem)
   }
 
   minHeightColumnIndex = () => {

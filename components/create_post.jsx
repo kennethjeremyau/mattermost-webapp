@@ -613,8 +613,10 @@ export default class CreatePost extends React.Component {
         this.focusTextbox();
     }
 
-    handleGifClick() {
+    handleGifClick(gif) {
+        this.setState({message: gif});
         this.setState({showGifPicker: false});
+        this.focusTextbox();
     }
 
     createTutorialTip() {

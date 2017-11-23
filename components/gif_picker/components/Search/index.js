@@ -35,11 +35,12 @@ export class Search extends Component {
   }
 
   render() {
-    const { appProps, searchText } = this.props
+    const { appProps, handleItemClick, searchText } = this.props
 
     return (
       <SearchGrid
         keyword={searchText}
+        handleItemClick={handleItemClick}
         loadMore={this.loadMore}
       />
     )

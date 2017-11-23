@@ -83,7 +83,7 @@ export default class GifPicker extends React.Component {
     }
 
     handleItemClick(gif) {
-        this.props.onGifClick(gif);
+        this.props.onGifClick(gif.max5mbGif);
     }
 
     render() {
@@ -116,10 +116,16 @@ export default class GifPicker extends React.Component {
             />
             break;
         case 'search':
-            component = <Search appProps={appProps}/>
+            component = <Search
+                appProps={appProps}
+                handleItemClick={this.handleItemClick}
+            />
             break;
         case 'trending':
-            component = <Trending appProps={appProps}/>
+            component = <Trending
+                appProps={appProps}
+                handleItemClick={this.handleItemClick}
+            />
             break;
         }
         return (
