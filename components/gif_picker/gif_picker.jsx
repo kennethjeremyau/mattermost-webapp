@@ -3,22 +3,12 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-
-//import { ReduxAsyncConnect } from 'redux-connect'
-
 import PureRenderMixin from 'react-addons-pure-render-mixin';
-
 import App from 'components/gif_picker/components/App';
-
-import Categories from 'components/gif_picker/components/Categories'
-//import Drawing from 'routes/Drawing'
-//import Embed from 'routes/Embed'
-//import GIFArt from 'routes/GIFArt'
+import Categories from 'components/gif_picker/components/Categories';
 import Search from 'components/gif_picker/components/Search';
 import Trending from 'components/gif_picker/components/Trending';
 import constants from 'components/gif_picker/utils/constants';
-
-import GifStore from 'stores/gif_store.jsx';
 
 export const appProps = {
     appName: constants.appName.mattermost,
@@ -109,23 +99,29 @@ export default class GifPicker extends React.Component {
         let component;
         switch (action) {
         case 'categories':
-            component = <Categories
-                appProps={appProps}
-                onTrending={this.handleTrending}
-                onSearch={this.handleSearch}
-            />
+            component = (
+                <Categories
+                    appProps={appProps}
+                    onTrending={this.handleTrending}
+                    onSearch={this.handleSearch}
+                />
+            );
             break;
         case 'search':
-            component = <Search
-                appProps={appProps}
-                handleItemClick={this.handleItemClick}
-            />
+            component = (
+                <Search
+                    appProps={appProps}
+                    handleItemClick={this.handleItemClick}
+                />
+            );
             break;
         case 'trending':
-            component = <Trending
-                appProps={appProps}
-                handleItemClick={this.handleItemClick}
-            />
+            component = (
+                <Trending
+                    appProps={appProps}
+                    handleItemClick={this.handleItemClick}
+                />
+            );
             break;
         }
         return (
