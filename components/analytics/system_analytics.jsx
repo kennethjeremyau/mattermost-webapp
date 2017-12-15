@@ -1,20 +1,20 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import LineChart from './line_chart.jsx';
-import DoughnutChart from './doughnut_chart.jsx';
-import StatisticCount from './statistic_count.jsx';
+import React from 'react';
+import {FormattedHTMLMessage, FormattedMessage} from 'react-intl';
 
+import * as AdminActions from 'actions/admin_actions.jsx';
 import AnalyticsStore from 'stores/analytics_store.jsx';
 
-import * as Utils from 'utils/utils.jsx';
-import * as AdminActions from 'actions/admin_actions.jsx';
 import Constants from 'utils/constants.jsx';
+import * as Utils from 'utils/utils.jsx';
+
+import DoughnutChart from './doughnut_chart.jsx';
+import LineChart from './line_chart.jsx';
+import StatisticCount from './statistic_count.jsx';
+
 const StatTypes = Constants.StatTypes;
-
-import {FormattedMessage, FormattedHTMLMessage} from 'react-intl';
-
-import React from 'react';
 
 export default class SystemAnalytics extends React.Component {
     constructor(props) {
@@ -99,13 +99,8 @@ export default class SystemAnalytics extends React.Component {
                             />
                         }
                         data={postCountsDay}
-                        options={{
-                            legend: {
-                                display: false
-                            }
-                        }}
-                        width='740'
-                        height='225'
+                        width={740}
+                        height={225}
                     />
                 </div>
             );
@@ -120,13 +115,8 @@ export default class SystemAnalytics extends React.Component {
                             />
                         }
                         data={userCountsWithPostsDay}
-                        options={{
-                            legend: {
-                                display: false
-                            }
-                        }}
-                        width='740'
-                        height='225'
+                        width={740}
+                        height={225}
                     />
                 </div>
             );
@@ -240,8 +230,8 @@ export default class SystemAnalytics extends React.Component {
                             />
                         }
                         data={postTypeData}
-                        width='300'
-                        height='225'
+                        width={300}
+                        height={225}
                     />
                 );
             }
@@ -256,8 +246,8 @@ export default class SystemAnalytics extends React.Component {
                             />
                         }
                         data={channelTypeData}
-                        width='300'
-                        height='225'
+                        width={300}
+                        height={225}
                     />
                     {postTypeGraph}
                 </div>

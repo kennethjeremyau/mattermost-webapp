@@ -1,30 +1,29 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import SettingItemMin from 'components/setting_item_min.jsx';
-import SettingItemMax from 'components/setting_item_max.jsx';
-import AccessHistoryModal from 'components/access_history_modal';
-import ActivityLogModal from 'components/activity_log_modal';
-import ToggleModalButton from 'components/toggle_modal_button.jsx';
-import ConfirmModal from 'components/confirm_modal.jsx';
-
-import PreferenceStore from 'stores/preference_store.jsx';
-
-import * as Utils from 'utils/utils.jsx';
-import Constants from 'utils/constants.jsx';
-
-import {updatePassword, getAuthorizedApps, deactivateMfa, deauthorizeOAuthApp} from 'actions/user_actions.jsx';
-import {trackEvent} from 'actions/diagnostics_actions.jsx';
-import {isMobile} from 'utils/user_agent.jsx';
-
-import $ from 'jquery';
 import PropTypes from 'prop-types';
 import React from 'react';
+import {FormattedDate, FormattedHTMLMessage, FormattedMessage, FormattedTime} from 'react-intl';
+import {browserHistory, Link} from 'react-router';
+
 import * as UserUtils from 'mattermost-redux/utils/user_utils';
-import {FormattedMessage, FormattedTime, FormattedDate, FormattedHTMLMessage} from 'react-intl';
-import {browserHistory, Link} from 'react-router/es6';
+
+import {trackEvent} from 'actions/diagnostics_actions.jsx';
+import {deactivateMfa, deauthorizeOAuthApp, getAuthorizedApps, updatePassword} from 'actions/user_actions.jsx';
+import PreferenceStore from 'stores/preference_store.jsx';
+
+import Constants from 'utils/constants.jsx';
+import {isMobile} from 'utils/user_agent.jsx';
+import * as Utils from 'utils/utils.jsx';
 
 import icon50 from 'images/icon50x50.png';
+
+import AccessHistoryModal from 'components/access_history_modal';
+import ActivityLogModal from 'components/activity_log_modal';
+import ConfirmModal from 'components/confirm_modal.jsx';
+import SettingItemMax from 'components/setting_item_max.jsx';
+import SettingItemMin from 'components/setting_item_min.jsx';
+import ToggleModalButton from 'components/toggle_modal_button.jsx';
 
 const TOKEN_CREATING = 'creating';
 const TOKEN_CREATED = 'created';
@@ -69,6 +68,16 @@ export default class SecurityTab extends React.Component {
             revokeUserAccessToken: PropTypes.func.isRequired,
 
             /*
+             * Function to activate a personal access token
+             */
+            enableUserAccessToken: PropTypes.func.isRequired,
+
+            /*
+             * Function to deactivate a personal access token
+             */
+            disableUserAccessToken: PropTypes.func.isRequired,
+
+            /*
              * Function to clear personal access tokens locally
              */
             clearUserAccessTokens: PropTypes.func.isRequired
@@ -90,7 +99,8 @@ export default class SecurityTab extends React.Component {
             serverError: '',
             tokenError: '',
             showConfirmModal: false,
-            authService: this.props.user.auth_service
+            authService: this.props.user.auth_service,
+            savingPassword: false
         };
     }
 
@@ -126,7 +136,7 @@ export default class SecurityTab extends React.Component {
             return;
         }
 
-        const passwordErr = Utils.isValidPassword(newPassword);
+        const passwordErr = Utils.isValidPassword(newPassword, Utils.getPasswordConfig());
         if (passwordErr !== '') {
             this.setState({
                 passwordError: passwordErr,
@@ -140,6 +150,8 @@ export default class SecurityTab extends React.Component {
             this.setState(defaultState);
             return;
         }
+
+        this.setState({savingPassword: true});
 
         updatePassword(
             user.id,
@@ -510,7 +522,6 @@ export default class SecurityTab extends React.Component {
                 this.props.updateSection('');
                 this.setState({currentPassword: '', newPassword: '', confirmPassword: '', serverError: null, passwordError: null});
                 e.preventDefault();
-                $('.settings-modal .modal-body').scrollTop(0).perfectScrollbar('update');
             }.bind(this);
 
             return (
@@ -523,6 +534,7 @@ export default class SecurityTab extends React.Component {
                     }
                     inputs={inputs}
                     submit={submit}
+                    saving={this.state.savingPassword}
                     server_error={this.state.serverError}
                     client_error={this.state.passwordError}
                     updateSection={updateSectionStatus}
@@ -1097,6 +1109,24 @@ export default class SecurityTab extends React.Component {
         this.handleCancelConfirm();
     }
 
+    activateToken = async (tokenId) => {
+        const {error} = await this.props.actions.enableUserAccessToken(tokenId);
+        if (error) {
+            this.setState({serverError: error.message});
+        } else {
+            trackEvent('settings', 'activate_user_access_token');
+        }
+    }
+
+    deactivateToken = async (tokenId) => {
+        const {error} = await this.props.actions.disableUserAccessToken(tokenId);
+        if (error) {
+            this.setState({serverError: error.message});
+        } else {
+            trackEvent('settings', 'deactivate_user_access_token');
+        }
+    }
+
     createTokensSection = () => {
         let updateSectionStatus;
         let tokenListClass = '';
@@ -1106,6 +1136,48 @@ export default class SecurityTab extends React.Component {
             Object.values(this.props.userAccessTokens).forEach((token) => {
                 if (this.state.newToken && this.state.newToken.id === token.id) {
                     return;
+                }
+
+                let activeLink;
+                let activeStatus;
+
+                if (token.is_active) {
+                    activeLink = (
+                        <a
+                            name={token.id + '_deactivate'}
+                            href='#'
+                            onClick={(e) => {
+                                e.preventDefault();
+                                this.deactivateToken(token.id);
+                            }}
+                        >
+                            <FormattedMessage
+                                id='user.settings.tokens.deactivate'
+                                defaultMessage='Deactivate'
+                            />
+                        </a>);
+                } else {
+                    activeStatus = (
+                        <span className='has-error setting-box__inline-error'>
+                            <FormattedMessage
+                                id='user.settings.tokens.deactivatedWarning'
+                                defaultMessage='(Inactive)'
+                            />
+                        </span>
+                    );
+                    activeLink = (<a
+                        name={token.id + '_activate'}
+                        href='#'
+                        onClick={(e) => {
+                            e.preventDefault();
+                            this.activateToken(token.id);
+                        }}
+                                  >
+                        <FormattedMessage
+                            id='user.settings.tokens.activate'
+                            defaultMessage='Activate'
+                        />
+                    </a>);
                 }
 
                 tokenList.push(
@@ -1119,6 +1191,7 @@ export default class SecurityTab extends React.Component {
                                 defaultMessage='Token Description: '
                             />
                             {token.description}
+                            {activeStatus}
                         </div>
                         <div className='setting-box__token-id whitespace--nowrap overflow--ellipsis'>
                             <FormattedMessage
@@ -1128,8 +1201,10 @@ export default class SecurityTab extends React.Component {
                             {token.id}
                         </div>
                         <div>
+                            {activeLink}
+                            {' - '}
                             <a
-                                name={token.id}
+                                name={token.id + '_delete'}
                                 href='#'
                                 onClick={(e) => {
                                     e.preventDefault();
@@ -1164,7 +1239,7 @@ export default class SecurityTab extends React.Component {
                     <span>
                         <FormattedHTMLMessage
                             id='user.settings.tokens.description_mobile'
-                            defaultMessage='<a href="https://about.mattermost.com/default-user-access-tokens" target="_blank">Personal access tokens</a> function similar to session tokens and can be used by integrations to <a href="https://about.mattermost.com/default-api-authentication" target="_blank">authenticate against the REST API</a>. Create new tokens on your desktop.'
+                            defaultMessage='<a href="https://about.mattermost.com/default-user-access-tokens" target="_blank">Personal access tokens</a> function similarly to session tokens and can be used by integrations to <a href="https://about.mattermost.com/default-api-authentication" target="_blank">authenticate against the REST API</a>. Create new tokens on your desktop.'
                         />
                     </span>
                 );
@@ -1173,7 +1248,7 @@ export default class SecurityTab extends React.Component {
                     <span>
                         <FormattedHTMLMessage
                             id='user.settings.tokens.description'
-                            defaultMessage='<a href="https://about.mattermost.com/default-user-access-tokens" target="_blank">Personal access tokens</a> function similar to session tokens and can be used by integrations to <a href="https://about.mattermost.com/default-api-authentication" target="_blank">authenticate against the REST API</a>.'
+                            defaultMessage='<a href="https://about.mattermost.com/default-user-access-tokens" target="_blank">Personal access tokens</a> function similarly to session tokens and can be used by integrations to <a href="https://about.mattermost.com/default-api-authentication" target="_blank">authenticate against the REST API</a>.'
                         />
                     </span>
                 );
@@ -1429,7 +1504,7 @@ export default class SecurityTab extends React.Component {
                     <div className='divider-dark'/>
                     <br/>
                     <ToggleModalButton
-                        className='security-links theme'
+                        className='security-links color--link'
                         dialogType={AccessHistoryModal}
                     >
                         <i className='fa fa-clock-o'/>
@@ -1438,9 +1513,8 @@ export default class SecurityTab extends React.Component {
                             defaultMessage='View Access History'
                         />
                     </ToggleModalButton>
-                    <br/>
                     <ToggleModalButton
-                        className='security-links theme'
+                        className='security-links color--link margin-top'
                         dialogType={ActivityLogModal}
                     >
                         <i className='fa fa-clock-o'/>

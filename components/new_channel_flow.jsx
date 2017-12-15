@@ -1,24 +1,24 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import * as Utils from 'utils/utils.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+import {browserHistory} from 'react-router';
+
+import {createChannel} from 'actions/channel_actions.jsx';
 import TeamStore from 'stores/team_store.jsx';
+
 import {cleanUpUrlable} from 'utils/url.jsx';
+import * as Utils from 'utils/utils.jsx';
 
 import NewChannelModal from 'components/new_channel_modal';
-import ChangeURLModal from './change_url_modal.jsx';
 
-import {FormattedMessage} from 'react-intl';
-import {createChannel} from 'actions/channel_actions.jsx';
-import {browserHistory} from 'react-router/es6';
+import ChangeURLModal from './change_url_modal.jsx';
 
 const SHOW_NEW_CHANNEL = 1;
 const SHOW_EDIT_URL = 2;
 const SHOW_EDIT_URL_THEN_COMPLETE = 3;
-
-import PropTypes from 'prop-types';
-
-import React from 'react';
 
 export default class NewChannelFlow extends React.Component {
     constructor(props) {
@@ -34,7 +34,7 @@ export default class NewChannelFlow extends React.Component {
 
         this.state = {
             serverError: '',
-            channelType: 'O',
+            channelType: props.channelType || 'O',
             flowState: SHOW_NEW_CHANNEL,
             channelDisplayName: '',
             channelName: '',
@@ -113,14 +113,18 @@ export default class NewChannelFlow extends React.Component {
             this.doOnModalExited();
         }
     }
-    typeSwitched() {
+    typeSwitched(e) {
+        e.preventDefault();
         if (this.state.channelType === 'P') {
             this.setState({channelType: 'O'});
         } else {
             this.setState({channelType: 'P'});
         }
     }
-    urlChangeRequested() {
+    urlChangeRequested(e) {
+        if (e) {
+            e.preventDefault();
+        }
         this.setState({flowState: SHOW_EDIT_URL});
     }
     urlChangeSubmitted(newURL) {

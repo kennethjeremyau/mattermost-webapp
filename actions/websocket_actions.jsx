@@ -2,43 +2,42 @@
 // See License.txt for license information.
 
 import $ from 'jquery';
-import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
 
-import UserStore from 'stores/user_store.jsx';
-import TeamStore from 'stores/team_store.jsx';
-import PreferenceStore from 'stores/preference_store.jsx';
-import ChannelStore from 'stores/channel_store.jsx';
-import BrowserStore from 'stores/browser_store.jsx';
-import ErrorStore from 'stores/error_store.jsx';
-import NotificationStore from 'stores/notification_store.jsx'; //eslint-disable-line no-unused-vars
+import {browserHistory} from 'react-router';
+import {batchActions} from 'redux-batched-actions';
 
-import WebSocketClient from 'client/web_websocket_client.jsx';
-import * as WebrtcActions from './webrtc_actions.jsx';
+import {ChannelTypes, EmojiTypes, PostTypes, TeamTypes, UserTypes} from 'mattermost-redux/action_types';
+import {getChannelAndMyMember, getChannelStats, viewChannel} from 'mattermost-redux/actions/channels';
+import {setServerVersion} from 'mattermost-redux/actions/general';
+import {getPosts, getProfilesAndStatusesForPosts} from 'mattermost-redux/actions/posts';
+import * as TeamActions from 'mattermost-redux/actions/teams';
+import {Client4} from 'mattermost-redux/client';
+import {getCurrentUser} from 'mattermost-redux/selectors/entities/users';
 
+import {loadChannelsForCurrentUser} from 'actions/channel_actions.jsx';
 import * as GlobalActions from 'actions/global_actions.jsx';
 import {handleNewPost} from 'actions/post_actions.jsx';
-import {loadProfilesForSidebar} from 'actions/user_actions.jsx';
-import {loadChannelsForCurrentUser} from 'actions/channel_actions.jsx';
 import * as StatusActions from 'actions/status_actions.jsx';
-import {loadPlugin, removePlugin, loadPluginsIfNecessary} from 'plugins';
-
-import {ActionTypes, Constants, Preferences, SocketEvents, UserStatuses, ErrorBarTypes} from 'utils/constants.jsx';
-
-import {browserHistory} from 'react-router/es6';
-
+import {loadProfilesForSidebar} from 'actions/user_actions.jsx';
+import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
+import BrowserStore from 'stores/browser_store.jsx';
+import ChannelStore from 'stores/channel_store.jsx';
+import ErrorStore from 'stores/error_store.jsx';
+import PreferenceStore from 'stores/preference_store.jsx';
 import store from 'stores/redux_store.jsx';
-const dispatch = store.dispatch;
-const getState = store.getState;
+import TeamStore from 'stores/team_store.jsx';
+import UserStore from 'stores/user_store.jsx';
 
-import {batchActions} from 'redux-batched-actions';
-import {Client4} from 'mattermost-redux/client';
+import WebSocketClient from 'client/web_websocket_client.jsx';
+import {loadPlugin, loadPluginsIfNecessary, removePlugin} from 'plugins';
+
+import {ActionTypes, Constants, ErrorBarTypes, Preferences, SocketEvents, UserStatuses} from 'utils/constants.jsx';
 import {getSiteURL} from 'utils/url.jsx';
 
-import * as TeamActions from 'mattermost-redux/actions/teams';
-import {viewChannel, getChannelAndMyMember, getChannelStats} from 'mattermost-redux/actions/channels';
-import {getPosts, getProfilesAndStatusesForPosts} from 'mattermost-redux/actions/posts';
-import {setServerVersion} from 'mattermost-redux/actions/general';
-import {ChannelTypes, TeamTypes, UserTypes, PostTypes, EmojiTypes} from 'mattermost-redux/action_types';
+import * as WebrtcActions from './webrtc_actions.jsx';
+
+const dispatch = store.dispatch;
+const getState = store.getState;
 
 const MAX_WEBSOCKET_FAILS = 7;
 
@@ -94,6 +93,7 @@ export function reconnect(includeWebSocket = true) {
     loadChannelsForCurrentUser();
     getPosts(ChannelStore.getCurrentId())(dispatch, getState);
     StatusActions.loadStatusesForChannelAndSidebar();
+    TeamActions.getMyTeamUnreads()(dispatch, getState);
 
     ErrorStore.clearLastError();
     ErrorStore.emitChange();
@@ -244,6 +244,10 @@ function handleEvent(msg) {
         handlePluginDeactivated(msg);
         break;
 
+    case SocketEvents.USER_ROLE_UPDATED:
+        handleUserRoleUpdated(msg);
+        break;
+
     default:
     }
 }
@@ -267,7 +271,15 @@ function handleNewPostEvent(msg) {
 function handlePostEditEvent(msg) {
     // Store post
     const post = JSON.parse(msg.data.post);
-    dispatch({type: PostTypes.RECEIVED_POST, data: post});
+    dispatch({
+        type: PostTypes.RECEIVED_POSTS,
+        data: {
+            order: [],
+            posts: {
+                [post.id]: post
+            }
+        }
+    });
 
     // Update channel state
     if (ChannelStore.getCurrentId() === msg.broadcast.channel_id) {
@@ -371,7 +383,7 @@ function handleUserRemovedEvent(msg) {
             $('#removed_from_channel').modal('show');
         }
 
-        GlobalActions.toggleSideBarAction(false);
+        GlobalActions.emitCloseRightHandSide();
 
         const townsquare = ChannelStore.getByName('town-square');
         browserHistory.push(TeamStore.getCurrentTeamRelativeUrl() + '/channels/' + townsquare.name);
@@ -382,12 +394,27 @@ function handleUserRemovedEvent(msg) {
         });
     } else if (ChannelStore.getCurrentId() === msg.broadcast.channel_id) {
         getChannelStats(ChannelStore.getCurrentId())(dispatch, getState);
+        dispatch({
+            type: UserTypes.RECEIVED_PROFILE_NOT_IN_CHANNEL,
+            data: {user_id: msg.data.user_id},
+            id: msg.broadcast.channel_id
+        });
     }
 }
 
 function handleUserUpdatedEvent(msg) {
+    const currentUser = getCurrentUser(getState());
     const user = msg.data.user;
-    if (UserStore.getCurrentId() !== user.id) {
+
+    if (currentUser.id === user.id) {
+        dispatch({
+            type: UserTypes.RECEIVED_ME,
+            data: {
+                ...currentUser,
+                last_picture_update: user.last_picture_update
+            }
+        });
+    } else {
         UserStore.saveProfile(user);
     }
 }
@@ -408,6 +435,7 @@ function handleChannelDeletedEvent(msg) {
     }
     dispatch({type: ChannelTypes.RECEIVED_CHANNEL_DELETED, data: {id: msg.data.channel_id, team_id: msg.broadcast.team_id}}, getState);
     loadChannelsForCurrentUser();
+    TeamActions.getMyTeamUnreads()(dispatch, getState);
 }
 
 function handlePreferenceChangedEvent(msg) {
@@ -492,4 +520,19 @@ function handlePluginDeactivated(msg) {
     const manifest = msg.data.manifest;
     store.dispatch({type: ActionTypes.REMOVED_WEBAPP_PLUGIN, data: manifest});
     removePlugin(manifest);
+}
+
+function handleUserRoleUpdated(msg) {
+    const user = store.getState().entities.users.profiles[msg.data.user_id];
+
+    if (user) {
+        const roles = msg.data.roles;
+        const demoted = user.roles.includes(Constants.PERMISSIONS_SYSTEM_ADMIN) && !roles.includes(Constants.PERMISSIONS_SYSTEM_ADMIN);
+
+        store.dispatch({type: UserTypes.RECEIVED_PROFILE, data: {...user, roles}});
+
+        if (demoted && global.location.pathname.startsWith('/admin_console')) {
+            GlobalActions.redirectUserToDefaultTeam();
+        }
+    }
 }

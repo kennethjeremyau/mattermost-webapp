@@ -1,5 +1,26 @@
 @charset 'UTF-8';
 
+button {
+    &.style--none {
+        background: transparent;
+        border: none;
+        padding: 0;
+
+        &:focus {
+            outline: 0;
+        }
+
+        &.btn {
+            padding: 6px 12px;
+        }
+
+        &.btn--block {
+            text-align: left;
+            width: 100%;
+        }
+    }
+}
+
 .btn {
     @include single-transition(all, .15s, ease-in);
     @include border-radius($border-rad);
@@ -51,5 +72,9 @@
         background: $light-gray;
         border-color: transparent;
         color: $white;
+    }
+
+    .fa-refresh {
+        margin-right: 4px;
     }
 }

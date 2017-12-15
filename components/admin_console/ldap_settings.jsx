@@ -1,31 +1,33 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+
+import {ldapTest} from 'actions/admin_actions.jsx';
+
+import {JobTypes} from 'utils/constants.jsx';
+import * as Utils from 'utils/utils.jsx';
+
 import AdminSettings from './admin_settings.jsx';
 import BooleanSetting from './boolean_setting.jsx';
 import {ConnectionSecurityDropdownSettingLdap} from './connection_security_dropdown_setting.jsx';
+import JobsTable from './jobs';
+import RequestButton from './request_button/request_button.jsx';
 import SettingsGroup from './settings_group.jsx';
 import TextSetting from './text_setting.jsx';
-
-import {ldapSyncNow, ldapTest} from 'actions/admin_actions.jsx';
-
-import * as Utils from 'utils/utils.jsx';
-
-import React from 'react';
-import {FormattedMessage} from 'react-intl';
-import RequestButton from './request_button/request_button.jsx';
 
 export default class LdapSettings extends AdminSettings {
     constructor(props) {
         super(props);
 
         this.getConfigFromState = this.getConfigFromState.bind(this);
-
         this.renderSettings = this.renderSettings.bind(this);
     }
 
     getConfigFromState(config) {
         config.LdapSettings.Enable = this.state.enable;
+        config.LdapSettings.EnableSync = this.state.enableSync;
         config.LdapSettings.LdapServer = this.state.ldapServer;
         config.LdapSettings.LdapPort = this.parseIntNonZero(this.state.ldapPort);
         config.LdapSettings.ConnectionSecurity = this.state.connectionSecurity;
@@ -52,6 +54,7 @@ export default class LdapSettings extends AdminSettings {
     getStateFromConfig(config) {
         return {
             enable: config.LdapSettings.Enable,
+            enableSync: config.LdapSettings.EnableSync,
             ldapServer: config.LdapSettings.LdapServer,
             ldapPort: config.LdapSettings.LdapPort,
             connectionSecurity: config.LdapSettings.ConnectionSecurity,
@@ -83,6 +86,48 @@ export default class LdapSettings extends AdminSettings {
         );
     }
 
+    shouldBeDisabled = () => {
+        return !(this.state.enable || this.state.enableSync);
+    }
+
+    renderJobData(job) {
+        let mattermostUsers = '0';
+        let ldapUsers = '0';
+        let deleteCount = '0';
+        let updateCount = '0';
+
+        if (job && job.data) {
+            if (job.data.mattermost_users_count && job.data.mattermost_users_count.length > 0) {
+                mattermostUsers = job.data.mattermost_users_count;
+            }
+
+            if (job.data.ldap_users_count && job.data.ldap_users_count.length > 0) {
+                ldapUsers = job.data.ldap_users_count;
+            }
+
+            if (job.data.delete_count && job.data.delete_count.length > 0) {
+                deleteCount = job.data.delete_count;
+            }
+
+            if (job.data.update_count && job.data.update_count.length > 0) {
+                updateCount = job.data.update_count;
+            }
+        }
+
+        return (
+            <FormattedMessage
+                id='admin.ldap.jobExtraInfo'
+                defaultMessage='Scanned {ldapUsers} LDAP users, updated {updateCount}, deactivated {deleteCount}'
+                values={{
+                    mattermostUsers,
+                    ldapUsers,
+                    deleteCount,
+                    updateCount
+                }}
+            />
+        );
+    }
+
     renderSettings() {
         const licenseEnabled = global.window.mm_license.IsLicensed === 'true' && global.window.mm_license.LDAP === 'true';
         if (!licenseEnabled) {
@@ -108,6 +153,23 @@ export default class LdapSettings extends AdminSettings {
                     value={this.state.enable}
                     onChange={this.handleChange}
                 />
+                <BooleanSetting
+                    id='enableSync'
+                    label={
+                        <FormattedMessage
+                            id='admin.ldap.enableSyncTitle'
+                            defaultMessage='Enable Synchronization with AD/LDAP:'
+                        />
+                    }
+                    helpText={
+                        <FormattedMessage
+                            id='admin.ldap.enableSyncDesc'
+                            defaultMessage='When true, Mattermost periodically synchronizes users from AD/LDAP. When false, user attributes are updated in Mattermost during user login.'
+                        />
+                    }
+                    value={this.state.enableSync}
+                    onChange={this.handleChange}
+                />
                 <TextSetting
                     id='ldapServer'
                     label={
@@ -125,7 +187,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.ldapServer}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='ldapPort'
@@ -144,12 +206,12 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.ldapPort}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <ConnectionSecurityDropdownSettingLdap
                     value={this.state.connectionSecurity}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <BooleanSetting
                     id='skipCertificateVerification'
@@ -185,7 +247,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.baseDN}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='bindUsername'
@@ -203,7 +265,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.bindUsername}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='bindPassword'
@@ -221,7 +283,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.bindPassword}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='userFilter'
@@ -240,7 +302,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.userFilter}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='firstNameAttribute'
@@ -259,7 +321,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.firstNameAttribute}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='lastNameAttribute'
@@ -278,7 +340,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.lastNameAttribute}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='nicknameAttribute'
@@ -297,7 +359,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.nicknameAttribute}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='positionAttribute'
@@ -316,7 +378,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.positionAttribute}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='emailAttribute'
@@ -335,7 +397,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.emailAttribute}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='usernameAttribute'
@@ -354,7 +416,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.usernameAttribute}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='idAttribute'
@@ -373,7 +435,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.idAttribute}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='loginFieldName'
@@ -392,7 +454,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.loginFieldName}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='syncIntervalMinutes'
@@ -410,7 +472,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.syncIntervalMinutes}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='maxPageSize'
@@ -429,7 +491,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.maxPageSize}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <TextSetting
                     id='queryTimeout'
@@ -448,29 +510,7 @@ export default class LdapSettings extends AdminSettings {
                     }
                     value={this.state.queryTimeout}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable}
-                />
-                <RequestButton
-                    requestAction={ldapSyncNow}
-                    helpText={
-                        <FormattedMessage
-                            id='admin.ldap.syncNowHelpText'
-                            defaultMessage='Initiates an AD/LDAP synchronization immediately.'
-                        />
-                    }
-                    buttonText={
-                        <FormattedMessage
-                            id='admin.ldap.sync_button'
-                            defaultMessage='AD/LDAP Synchronize Now'
-                        />
-                    }
-                    disabled={!this.state.enable}
-                    showSuccessMessage={false}
-                    errorMessage={{
-                        id: 'admin.ldap.syncFailure',
-                        defaultMessage: 'Sync Failure: {error}'
-                    }}
-                    includeDetailedError={true}
+                    disabled={this.shouldBeDisabled()}
                 />
                 <RequestButton
                     requestAction={ldapTest}
@@ -486,7 +526,7 @@ export default class LdapSettings extends AdminSettings {
                             defaultMessage='AD/LDAP Test'
                         />
                     }
-                    disabled={!this.state.enable}
+                    disabled={this.shouldBeDisabled()}
                     saveNeeded={this.state.saveNeeded}
                     saveConfigAction={this.doSubmit}
                     errorMessage={{
@@ -497,6 +537,23 @@ export default class LdapSettings extends AdminSettings {
                         id: 'admin.ldap.testSuccess',
                         defaultMessage: 'AD/LDAP Test Successful'
                     }}
+                />
+                <JobsTable
+                    jobType={JobTypes.LDAP_SYNC}
+                    getExtraInfoText={this.renderJobData}
+                    disabled={this.shouldBeDisabled()}
+                    createJobButtonText={
+                        <FormattedMessage
+                            id='admin.ldap.sync_button'
+                            defaultMessage='AD/LDAP Synchronize Now'
+                        />
+                    }
+                    createJobHelpText={
+                        <FormattedMessage
+                            id='admin.ldap.syncNowHelpText'
+                            defaultMessage='Initiates an AD/LDAP synchronization immediately.'
+                        />
+                    }
                 />
             </SettingsGroup>
         );

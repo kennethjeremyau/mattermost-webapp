@@ -2,25 +2,27 @@
 // See License.txt for license information.
 
 import $ from 'jquery';
+
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+
+import UserStore from 'stores/user_store.jsx';
+import ErrorStore from 'stores/error_store.jsx';
+
+import Constants from 'utils/constants.jsx';
+import * as TextFormatting from 'utils/text_formatting.jsx';
+import * as Utils from 'utils/utils.jsx';
+import * as PostUtils from 'utils/post_utils.jsx';
+
 import AtMentionProvider from './suggestion/at_mention_provider.jsx';
 import ChannelMentionProvider from './suggestion/channel_mention_provider.jsx';
 import CommandProvider from './suggestion/command_provider.jsx';
 import EmoticonProvider from './suggestion/emoticon_provider.jsx';
-import SuggestionList from './suggestion/suggestion_list.jsx';
 import SuggestionBox from './suggestion/suggestion_box.jsx';
-import ErrorStore from 'stores/error_store.jsx';
-
-import * as TextFormatting from 'utils/text_formatting.jsx';
-import * as Utils from 'utils/utils.jsx';
-import Constants from 'utils/constants.jsx';
-
-import {FormattedMessage} from 'react-intl';
+import SuggestionList from './suggestion/suggestion_list.jsx';
 
 const PreReleaseFeatures = Constants.PRE_RELEASE_FEATURES;
-
-import PropTypes from 'prop-types';
-
-import React from 'react';
 
 export default class Textbox extends React.Component {
     static propTypes = {
@@ -38,8 +40,8 @@ export default class Textbox extends React.Component {
         suggestionListStyle: PropTypes.string,
         emojiEnabled: PropTypes.bool,
         isRHS: PropTypes.bool,
-        popoverMentionKeyClick: React.PropTypes.bool,
-        characterLimit: React.PropTypes.number
+        popoverMentionKeyClick: PropTypes.bool,
+        characterLimit: PropTypes.number
     };
 
     static defaultProps = {
@@ -142,6 +144,11 @@ export default class Textbox extends React.Component {
         Utils.placeCaretAtEnd(textbox);
     }
 
+    blur = () => {
+        const textbox = this.refs.message.getTextbox();
+        textbox.blur();
+    };
+
     recalculateSize = () => {
         this.refs.message.recalculateSize();
     }
@@ -174,6 +181,12 @@ export default class Textbox extends React.Component {
         const hasText = this.props.value && this.props.value.length > 0;
 
         let editHeader;
+        let helpTextClass = '';
+
+        if (this.props.value && this.props.value.length > this.props.characterLimit) {
+            helpTextClass = 'hidden';
+        }
+
         if (this.props.previewMessageLink) {
             editHeader = (
                 <span>
@@ -193,6 +206,7 @@ export default class Textbox extends React.Component {
         if (Utils.isFeatureEnabled(PreReleaseFeatures.MARKDOWN_PREVIEW)) {
             previewLink = (
                 <a
+                    id='previewLink'
                     onClick={this.togglePreview}
                     className='textbox-preview-link'
                 >
@@ -210,6 +224,7 @@ export default class Textbox extends React.Component {
 
         const helpText = (
             <div
+                id='helpText'
                 style={{visibility: hasText ? 'visible' : 'hidden', opacity: hasText ? '0.45' : '0'}}
                 className='help__format-text'
             >
@@ -256,6 +271,25 @@ export default class Textbox extends React.Component {
             </div>
         );
 
+        const options = {
+            mentionKeys: UserStore.getCurrentMentionKeys(),
+            atMentions: true
+        };
+
+        let preview = null;
+
+        if (this.state.preview) {
+            preview = (
+                <div
+                    ref='preview'
+                    className='form-control custom-textarea textbox-preview-area'
+                    style={{display: this.state.preview ? 'block' : 'none'}}
+                >
+                    {PostUtils.postMessageHtmlToComponent(TextFormatting.formatText(this.props.value, options), this.props.isRHS)}
+                </div>
+            );
+        }
+
         let textboxClassName = 'form-control custom-textarea';
         if (this.props.emojiEnabled) {
             textboxClassName += ' custom-textarea--emoji-picker';
@@ -291,16 +325,12 @@ export default class Textbox extends React.Component {
                     isRHS={this.props.isRHS}
                     popoverMentionKeyClick={this.props.popoverMentionKeyClick}
                 />
-                <div
-                    ref='preview'
-                    className='form-control custom-textarea textbox-preview-area'
-                    style={{display: this.state.preview ? 'block' : 'none'}}
-                    dangerouslySetInnerHTML={{__html: this.state.preview ? TextFormatting.formatText(this.props.value) : ''}}
-                />
-                <div className='help__text'>
+                {preview}
+                <div className={'help__text ' + helpTextClass}>
                     {helpText}
                     {previewLink}
                     <a
+                        id='helpTextLink'
                         target='_blank'
                         rel='noopener noreferrer'
                         href='/help/messaging'

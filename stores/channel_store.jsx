@@ -1,26 +1,29 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
 import EventEmitter from 'events';
 
+import {batchActions} from 'redux-batched-actions';
+
+import UserStore from 'stores/user_store.jsx'; // eslint-disable-line import/order
+
+import {ChannelTypes, UserTypes} from 'mattermost-redux/action_types';
+import * as Selectors from 'mattermost-redux/selectors/entities/channels';
+
+import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
+import store from 'stores/redux_store.jsx';
 import TeamStore from 'stores/team_store.jsx';
-import UserStore from 'stores/user_store.jsx';
+
+import {ActionTypes, Constants} from 'utils/constants.jsx';
+import {isFromWebhook, isSystemMessage} from 'utils/post_utils.jsx';
 
 var ChannelUtils;
 var Utils;
-import {ActionTypes, Constants} from 'utils/constants.jsx';
-import {isSystemMessage, isFromWebhook} from 'utils/post_utils.jsx';
 const NotificationPrefs = Constants.NotificationPrefs;
 
 const CHANGE_EVENT = 'change';
 const STATS_EVENT = 'stats';
 const LAST_VIEVED_EVENT = 'last_viewed';
-
-import store from 'stores/redux_store.jsx';
-import * as Selectors from 'mattermost-redux/selectors/entities/channels';
-import {ChannelTypes, UserTypes} from 'mattermost-redux/action_types';
-import {batchActions} from 'redux-batched-actions';
 
 class ChannelStoreClass extends EventEmitter {
     constructor(props) {
@@ -34,30 +37,35 @@ class ChannelStoreClass extends EventEmitter {
             const newEntities = store.getState().entities.channels;
             let doEmit = false;
 
-            if (newEntities.currentChannelId !== this.entities.currentChannelId) {
+            const entities = this.entities;
+            this.entities = newEntities;
+
+            if (newEntities.currentChannelId !== entities.currentChannelId) {
                 doEmit = true;
             }
-            if (newEntities.channels !== this.entities.channels) {
+
+            if (newEntities.channels !== entities.channels) {
                 this.setUnreadCountsByChannels(Object.values(newEntities.channels));
                 doEmit = true;
             }
-            if (newEntities.myMembers !== this.entities.myMembers) {
+
+            if (newEntities.myMembers !== entities.myMembers) {
                 this.setUnreadCountsByMembers(Object.values(newEntities.myMembers));
                 this.emitLastViewed();
                 doEmit = true;
             }
-            if (newEntities.membersInChannel !== this.entities.membersInChannel) {
+
+            if (newEntities.membersInChannel !== entities.membersInChannel) {
                 doEmit = true;
             }
-            if (newEntities.stats !== this.entities.stats) {
+
+            if (newEntities.stats !== entities.stats) {
                 this.emitStatsChange();
             }
 
             if (doEmit) {
                 this.emitChange();
             }
-
-            this.entities = newEntities;
         });
     }
 

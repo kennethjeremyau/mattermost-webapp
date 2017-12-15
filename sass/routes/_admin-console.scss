@@ -12,6 +12,10 @@
     overflow: auto;
     padding: 0 20px;
 
+    .table {
+        margin-bottom: 0;
+    }
+
     .color-picker__popover {
         position: absolute;
         right: 0;
@@ -186,15 +190,20 @@
                 background: $white;
                 border: $border-gray;
                 margin: 0;
-                padding: 8px 12px;
+                padding: 12px 14px;
                 width: 100%;
             }
 
             hr {
+                border-color: #ddd;
                 margin: .8em 0;
+            }
 
+            div {
                 &:last-child {
-                    display: none;
+                    hr {
+                        display: none;
+                    }
                 }
             }
         }
@@ -343,6 +352,31 @@
         background-color: #e2e2e2;
     }
 }
+
+.job-table__cancel-button {
+    cursor: pointer;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 0;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.job-table__table {
+    background-color: $white;
+    border: $border-gray;
+    margin: 20px 0 10px;
+    max-height: 240px;
+    min-height: 100px;
+    overflow: auto;
+    padding: 5px;
+    width: 100%;
+}
+
+.job-table__panel {
+}
+
 
 .brand-img {
     margin-bottom: 1.5em;
@@ -570,6 +604,10 @@
 }
 
 .manage-teams {
+    .modal-body {
+        padding: 15px 15px 0;
+    }
+
     .manage-teams__user {
         align-items: center;
         display: flex;
@@ -670,4 +708,53 @@
             @include box-shadow(none);
         }
     }
+}
+
+.discard-changes-modal .modal-dialog {
+    .btn-default, .btn-default:hover, .btn-default:active, .btn-default:focus {
+        color: $primary-color;
+        background-color: transparent;
+        border: none;
+    }
+}
+
+.admin-setting-user__dropdown {
+    position: relative;
+
+    &:before {
+        border-color: #999 transparent transparent;
+        border-style: solid;
+        border-width: 5px 5px 2.5px;
+        content: '';
+        height: 0;
+        pointer-events: none;
+        position: absolute;
+        right: 11px;
+        top: 15px;
+        width: 0;
+    }
+}
+
+.admin-setting-user__image {
+    @include border-radius(20px);
+    display: block;
+    font-size: 15px;
+    height: 16px;
+    line-height: 16px;
+    margin-right: 7px;
+    margin-top: 3px;
+    text-align: center;
+    width: 16px;
+
+    .admin-setting-user--align {
+        display: inline-block;
+        max-width: 80%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.admin-setting-user__fullname {
+    @include opacity(.5);
 }

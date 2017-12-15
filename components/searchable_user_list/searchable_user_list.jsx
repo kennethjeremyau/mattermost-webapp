@@ -2,14 +2,15 @@
 // See License.txt for license information.
 
 import $ from 'jquery';
+
 import PropTypes from 'prop-types';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {FormattedMessage} from 'react-intl';
 
-import UserList from 'components/user_list.jsx';
-
 import * as Utils from 'utils/utils.jsx';
+
+import UserList from 'components/user_list.jsx';
 
 const NEXT_BUTTON_TIMEOUT = 500;
 
@@ -31,7 +32,10 @@ export default class SearchableUserList extends React.Component {
 
         page: PropTypes.number.isRequired,
         term: PropTypes.string.isRequired,
-        onTermChange: PropTypes.func.isRequired
+        onTermChange: PropTypes.func.isRequired,
+
+        // the type of user list row to render
+        rowComponentType: PropTypes.func
     };
 
     static defaultProps = {
@@ -238,6 +242,7 @@ export default class SearchableUserList extends React.Component {
                         actions={this.props.actions}
                         actionProps={this.props.actionProps}
                         actionUserProps={this.props.actionUserProps}
+                        rowComponentType={this.props.rowComponentType}
                     />
                 </div>
                 <div className='filter-controls'>

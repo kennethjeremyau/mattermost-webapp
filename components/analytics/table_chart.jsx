@@ -1,62 +1,76 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
+import React from 'react';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
+
 import Constants from 'utils/constants.jsx';
 
-import {Tooltip, OverlayTrigger} from 'react-bootstrap';
+export default class TableChart extends React.PureComponent {
+    static propTypes = {
 
-import PropTypes from 'prop-types';
+        /*
+         * Table title
+         */
+        title: PropTypes.node.isRequired,
 
-import React from 'react';
+        /*
+         * Table data
+         */
+        data: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+                tip: PropTypes.string.isRequired,
+                value: PropTypes.node.isRequired
+            })
+        ).isRequired
+    };
 
-export default function TableChart(props) {
-    return (
-        <div className='col-sm-6'>
-            <div className='total-count recent-active-users'>
-                <div className='title'>
-                    {props.title}
-                </div>
-                <div className='content'>
-                    <table>
-                        <tbody>
-                            {
-                                props.data.map((item) => {
-                                    const tooltip = (
-                                        <Tooltip id={'tip-table-entry-' + item.name}>
-                                            {item.tip}
-                                        </Tooltip>
-                                    );
+    render() {
+        return (
+            <div className='col-sm-6'>
+                <div className='total-count recent-active-users'>
+                    <div className='title'>
+                        {this.props.title}
+                    </div>
+                    <div className='content'>
+                        <table>
+                            <tbody>
+                                {
+                                    this.props.data.map((item) => {
+                                        const tooltip = (
+                                            <Tooltip id={'tip-table-entry-' + item.name}>
+                                                {item.tip}
+                                            </Tooltip>
+                                        );
 
-                                    return (
-                                        <tr key={'table-entry-' + item.name}>
-                                            <td>
-                                                <OverlayTrigger
-                                                    trigger={['hover', 'focus']}
-                                                    delayShow={Constants.OVERLAY_TIME_DELAY}
-                                                    placement='top'
-                                                    overlay={tooltip}
-                                                >
-                                                    <time>
-                                                        {item.name}
-                                                    </time>
-                                                </OverlayTrigger>
-                                            </td>
-                                            <td>
-                                                {item.value}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            }
-                        </tbody>
-                    </table>
+                                        return (
+                                            <tr key={'table-entry-' + item.name}>
+                                                <td>
+                                                    <OverlayTrigger
+                                                        trigger={['hover', 'focus']}
+                                                        delayShow={Constants.OVERLAY_TIME_DELAY}
+                                                        placement='top'
+                                                        overlay={tooltip}
+                                                    >
+                                                        <time>
+                                                            {item.name}
+                                                        </time>
+                                                    </OverlayTrigger>
+                                                </td>
+                                                <td>
+                                                    {item.value}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 }
-
-TableChart.propTypes = {
-    title: PropTypes.node,
-    data: PropTypes.array
-};

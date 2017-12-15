@@ -1,26 +1,26 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import Suggestion from './suggestion.jsx';
-import Provider from './provider.jsx';
-
-import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
-import {Constants, ActionTypes} from 'utils/constants.jsx';
-import * as Utils from 'utils/utils.jsx';
-import {sortChannelsByDisplayName, getChannelDisplayName} from 'utils/channel_utils.jsx';
-
 import React from 'react';
 
-import store from 'stores/redux_store.jsx';
-const getState = store.getState;
-
 import {Client4} from 'mattermost-redux/client';
-
-import {getCurrentUserId, searchProfiles} from 'mattermost-redux/selectors/entities/users';
-import {getChannelsInCurrentTeam, getMyChannelMemberships, getGroupChannels} from 'mattermost-redux/selectors/entities/channels';
-import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
-import {getBool} from 'mattermost-redux/selectors/entities/preferences';
 import {Preferences} from 'mattermost-redux/constants';
+import {getChannelsInCurrentTeam, getGroupChannels, getMyChannelMemberships} from 'mattermost-redux/selectors/entities/channels';
+import {getBool} from 'mattermost-redux/selectors/entities/preferences';
+import {getCurrentTeamId} from 'mattermost-redux/selectors/entities/teams';
+import {getCurrentUserId, searchProfiles} from 'mattermost-redux/selectors/entities/users';
+
+import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
+import store from 'stores/redux_store.jsx';
+
+import {getChannelDisplayName, sortChannelsByDisplayName} from 'utils/channel_utils.jsx';
+import {ActionTypes, Constants} from 'utils/constants.jsx';
+import * as Utils from 'utils/utils.jsx';
+
+import Provider from './provider.jsx';
+import Suggestion from './suggestion.jsx';
+
+const getState = store.getState;
 
 class SwitchChannelSuggestion extends Suggestion {
     render() {
@@ -85,6 +85,12 @@ function quickSwitchSorter(wrappedA, wrappedB) {
         return 1;
     }
 
+    if (wrappedA.deactivated && !wrappedB.deactivated) {
+        return 1;
+    } else if (wrappedB.deactivated && !wrappedA.deactivated) {
+        return -1;
+    }
+
     const a = wrappedA.channel;
     const b = wrappedB.channel;
 
@@ -133,12 +139,19 @@ export default class SwitchChannelProvider extends Provider {
     }
 
     async fetchUsersAndChannels(channelPrefix, suggestionId) {
-        let teamId = '';
-        if (global.window.mm_config.RestrictDirectMessage === 'team') {
-            teamId = store.getState().entities.teams.currentTeamId;
+        const teamId = getCurrentTeamId(getState());
+        if (!teamId) {
+            return;
         }
-        const usersAsync = Client4.autocompleteUsers(channelPrefix, teamId, '');
-        const channelsAsync = Client4.searchChannels(getCurrentTeamId(getState()), channelPrefix);
+
+        let usersAsync;
+        if (global.window.mm_config.RestrictDirectMessage === 'team') {
+            usersAsync = Client4.autocompleteUsers(channelPrefix, teamId, '');
+        } else {
+            usersAsync = Client4.autocompleteUsers(channelPrefix, '', '');
+        }
+
+        const channelsAsync = Client4.searchChannels(teamId, channelPrefix);
 
         let usersFromServer = [];
         let channelsFromServer = [];
@@ -156,7 +169,7 @@ export default class SwitchChannelProvider extends Provider {
             return;
         }
 
-        const users = Object.assign([], searchProfiles(getState(), channelPrefix, true), usersFromServer.users);
+        const users = Object.assign([], searchProfiles(getState(), channelPrefix, true)).concat(usersFromServer.users);
         const channels = getChannelsInCurrentTeam(getState()).concat(getGroupChannels(getState())).concat(channelsFromServer);
         this.formatChannelsAndDispatch(channelPrefix, suggestionId, channels, users);
     }
@@ -184,7 +197,7 @@ export default class SwitchChannelProvider extends Provider {
 
             if (channel.display_name.toLowerCase().indexOf(channelPrefix.toLowerCase()) !== -1) {
                 const newChannel = Object.assign({}, channel);
-                const wrappedChannel = {channel: newChannel, name: newChannel.name};
+                const wrappedChannel = {channel: newChannel, name: newChannel.name, deactivated: false};
                 if (newChannel.type === Constants.GM_CHANNEL) {
                     newChannel.name = getChannelDisplayName(newChannel);
                     wrappedChannel.name = newChannel.name;
@@ -219,18 +232,22 @@ export default class SwitchChannelProvider extends Provider {
             }
 
             const isDMVisible = getBool(getState(), Preferences.CATEGORY_DIRECT_CHANNEL_SHOW, user.id, false);
-            let displayName = `@${user.username} `;
+            let displayName = `@${user.username}`;
 
             if (user.id === currentId) {
                 continue;
             }
 
             if ((user.first_name || user.last_name) && user.nickname) {
-                displayName += `- ${Utils.getFullName(user)} (${user.nickname})`;
+                displayName += ` - ${Utils.getFullName(user)} (${user.nickname})`;
             } else if (user.nickname) {
-                displayName += `- (${user.nickname})`;
+                displayName += ` - (${user.nickname})`;
             } else if (user.first_name || user.last_name) {
-                displayName += `- ${Utils.getFullName(user)}`;
+                displayName += ` - ${Utils.getFullName(user)}`;
+            }
+
+            if (user.delete_at) {
+                displayName += ' - ' + Utils.localizeMessage('channel_switch_modal.deactivated', 'Deactivated');
             }
 
             const wrappedChannel = {
@@ -242,7 +259,8 @@ export default class SwitchChannelProvider extends Provider {
                     type: Constants.DM_CHANNEL,
                     last_picture_update: user.last_picture_update || 0
                 },
-                name: user.username
+                name: user.username,
+                deactivated: user.delete_at
             };
 
             if (isDMVisible) {

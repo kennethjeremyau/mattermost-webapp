@@ -1,59 +1,50 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
+import {browserHistory} from 'react-router';
 
-import ChannelStore from 'stores/channel_store.jsx';
-import UserStore from 'stores/user_store.jsx';
-import BrowserStore from 'stores/browser_store.jsx';
-import ErrorStore from 'stores/error_store.jsx';
-import TeamStore from 'stores/team_store.jsx';
-import SearchStore from 'stores/search_store.jsx';
+import {createDirectChannel, getChannelAndMyMember, getChannelStats, getMyChannelMember, joinChannel, viewChannel} from 'mattermost-redux/actions/channels';
+import {getPostThread} from 'mattermost-redux/actions/posts';
+import {removeUserFromTeam} from 'mattermost-redux/actions/teams';
+import {Client4} from 'mattermost-redux/client';
 
-import {handleNewPost} from 'actions/post_actions.jsx';
-import {loadProfilesForSidebar, loadNewDMIfNeeded, loadNewGMIfNeeded} from 'actions/user_actions.jsx';
 import {loadChannelsForCurrentUser} from 'actions/channel_actions.jsx';
+import {handleNewPost} from 'actions/post_actions.jsx';
 import {stopPeriodicStatusUpdates} from 'actions/status_actions.jsx';
+import {loadNewDMIfNeeded, loadNewGMIfNeeded, loadProfilesForSidebar} from 'actions/user_actions.jsx';
+import {closeRightHandSide} from 'actions/views/rhs';
 import * as WebsocketActions from 'actions/websocket_actions.jsx';
-import {trackEvent} from 'actions/diagnostics_actions.jsx';
+import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
+import BrowserStore from 'stores/browser_store.jsx';
+import ChannelStore from 'stores/channel_store.jsx';
+import ErrorStore from 'stores/error_store.jsx';
+import store from 'stores/redux_store.jsx';
+import TeamStore from 'stores/team_store.jsx';
+import UserStore from 'stores/user_store.jsx';
+
+import WebSocketClient from 'client/web_websocket_client.jsx';
 
 import {ActionTypes, Constants, ErrorPageTypes} from 'utils/constants.jsx';
 import EventTypes from 'utils/event_types.jsx';
-
-import WebSocketClient from 'client/web_websocket_client.jsx';
 import {sortTeamsByDisplayName} from 'utils/team_utils.jsx';
 import * as Utils from 'utils/utils.jsx';
 
 import en from 'i18n/en.json';
 import * as I18n from 'i18n/i18n.jsx';
-import {browserHistory} from 'react-router/es6';
 
-// Redux actions
-import store from 'stores/redux_store.jsx';
 const dispatch = store.dispatch;
 const getState = store.getState;
 
-import {Client4} from 'mattermost-redux/client';
-
-import {removeUserFromTeam} from 'mattermost-redux/actions/teams';
-import {viewChannel, getChannelStats, getMyChannelMember, getChannelAndMyMember, createDirectChannel, joinChannel} from 'mattermost-redux/actions/channels';
-import {getPostThread} from 'mattermost-redux/actions/posts';
-
 export function emitChannelClickEvent(channel) {
-    function userVisitedFakeChannel(chan, success, fail) {
+    async function userVisitedFakeChannel(chan, success, fail) {
         const currentUserId = UserStore.getCurrentId();
         const otherUserId = Utils.getUserIdFromChannelName(chan);
-        createDirectChannel(currentUserId, otherUserId)(dispatch, getState).then(
-            (result) => {
-                const receivedChannel = result.data;
-
-                if (receivedChannel) {
-                    success(receivedChannel);
-                } else {
-                    fail();
-                }
-            }
-        );
+        const {data: receivedChannel} = await createDirectChannel(currentUserId, otherUserId)(dispatch, getState);
+        if (receivedChannel) {
+            success(receivedChannel);
+        } else {
+            fail();
+        }
     }
     function switchToChannel(chan) {
         const channelMember = ChannelStore.getMyMember(chan.id);
@@ -126,59 +117,31 @@ export async function doFocusPost(channelId, postId, data) {
     getChannelStats(channelId)(dispatch, getState);
 }
 
-export function emitPostFocusEvent(postId, onSuccess) {
-    loadChannelsForCurrentUser();
-    getPostThread(postId)(dispatch, getState).then(
-        (data) => {
-            if (data) {
-                const channelId = data.posts[data.order[0]].channel_id;
-                const channel = ChannelStore.getChannelById(channelId);
-                if (channel && channel.type === Constants.DM_CHANNEL) {
-                    loadNewDMIfNeeded(channel.id);
-                } else if (channel && channel.type === Constants.GM_CHANNEL) {
-                    loadNewGMIfNeeded(channel.id);
-                }
-
-                doFocusPost(channelId, postId, data).then(() => {
-                    if (onSuccess) {
-                        onSuccess();
-                    }
-                });
-            } else {
-                browserHistory.push('/error?type=' + ErrorPageTypes.PERMALINK_NOT_FOUND);
-            }
-        }
-    );
-}
-
 export function emitCloseRightHandSide() {
-    SearchStore.storeSearchResults(null, false, false);
-    SearchStore.emitSearchChange();
-
-    dispatch({
-        type: ActionTypes.SELECT_POST,
-        postId: ''
-    });
+    dispatch(closeRightHandSide());
 }
 
-export function emitPostFocusRightHandSideFromSearch(post, isMentionSearch) {
-    getPostThread(post.id)(dispatch, getState).then(
-        () => {
-            AppDispatcher.handleServerAction({
-                type: ActionTypes.RECEIVED_POST_SELECTED,
-                postId: Utils.getRootId(post),
-                from_search: SearchStore.getSearchTerm(),
-                from_flagged_posts: SearchStore.getIsFlaggedPosts(),
-                from_pinned_posts: SearchStore.getIsPinnedPosts()
-            });
+export async function emitPostFocusEvent(postId, onSuccess) {
+    loadChannelsForCurrentUser();
+    const {data} = await getPostThread(postId)(dispatch, getState);
 
-            AppDispatcher.handleServerAction({
-                type: ActionTypes.RECEIVED_SEARCH,
-                results: null,
-                is_mention_search: isMentionSearch
-            });
+    if (data) {
+        const channelId = data.posts[data.order[0]].channel_id;
+        const channel = ChannelStore.getChannelById(channelId);
+        if (channel && channel.type === Constants.DM_CHANNEL) {
+            loadNewDMIfNeeded(channel.id);
+        } else if (channel && channel.type === Constants.GM_CHANNEL) {
+            loadNewGMIfNeeded(channel.id);
         }
-    );
+
+        doFocusPost(channelId, postId, data).then(() => {
+            if (onSuccess) {
+                onSuccess();
+            }
+        });
+    } else {
+        browserHistory.push('/error?type=' + ErrorPageTypes.PERMALINK_NOT_FOUND);
+    }
 }
 
 export function emitLeaveTeam() {
@@ -206,7 +169,7 @@ export function showAccountSettingsModal() {
     });
 }
 
-export function showShortcutsModal() {
+export function toggleShortcutsModal() {
     AppDispatcher.handleViewAction({
         type: ActionTypes.TOGGLE_SHORTCUTS_MODAL,
         value: true
@@ -470,7 +433,7 @@ export function emitUserLoggedOutEvent(redirectTo = '/', shouldSignalLogout = tr
 }
 
 export function clientLogout(redirectTo = '/') {
-    BrowserStore.clear();
+    BrowserStore.clear({exclude: [Constants.RECENT_EMOJI_KEY, '__landingPageSeen__', 'selected_teams']});
     ErrorStore.clearLastError();
     ChannelStore.clear();
     stopPeriodicStatusUpdates();
@@ -479,64 +442,8 @@ export function clientLogout(redirectTo = '/') {
     window.location.href = redirectTo;
 }
 
-export function emitSearchMentionsEvent(user) {
-    let terms = '';
-    if (user.notify_props) {
-        const termKeys = UserStore.getMentionKeys(user.id);
-
-        if (termKeys.indexOf('@channel') !== -1) {
-            termKeys[termKeys.indexOf('@channel')] = '';
-        }
-
-        if (termKeys.indexOf('@all') !== -1) {
-            termKeys[termKeys.indexOf('@all')] = '';
-        }
-
-        terms = termKeys.join(' ');
-    }
-
-    trackEvent('api', 'api_posts_search_mention');
-
-    AppDispatcher.handleServerAction({
-        type: ActionTypes.RECEIVED_SEARCH_TERM,
-        term: terms,
-        do_search: true,
-        is_mention_search: true
-    });
-}
-
-export function toggleSideBarAction(visible) {
-    if (!visible) {
-        //Array of actions resolving in the closing of the sidebar
-        AppDispatcher.handleServerAction({
-            type: ActionTypes.RECEIVED_SEARCH,
-            results: null
-        });
-
-        AppDispatcher.handleServerAction({
-            type: ActionTypes.RECEIVED_SEARCH_TERM,
-            term: null,
-            do_search: false,
-            is_mention_search: false
-        });
-
-        AppDispatcher.handleServerAction({
-            type: ActionTypes.RECEIVED_POST_SELECTED,
-            postId: null
-        });
-    }
-}
-
 export function toggleSideBarRightMenuAction() {
-    AppDispatcher.handleServerAction({
-        type: ActionTypes.RECEIVED_SEARCH,
-        results: null
-    });
-
-    AppDispatcher.handleServerAction({
-        type: ActionTypes.RECEIVED_POST_SELECTED,
-        postId: null
-    });
+    dispatch(closeRightHandSide());
 
     document.querySelector('.app__body .inner-wrap').classList.remove('move--right', 'move--left', 'move--left-small');
     document.querySelector('.app__body .sidebar--left').classList.remove('move--right');
@@ -551,7 +458,7 @@ export function emitBrowserFocus(focus) {
     });
 }
 
-export function redirectUserToDefaultTeam() {
+export async function redirectUserToDefaultTeam() {
     const teams = TeamStore.getAll();
     const teamMembers = TeamStore.getMyTeamMembers();
     let teamId = BrowserStore.getGlobalItem('team');
@@ -581,15 +488,12 @@ export function redirectUserToDefaultTeam() {
         if (channel) {
             redirect(teams[teamId].name, channel);
         } else if (channelId) {
-            getChannelAndMyMember(channelId)(dispatch, getState).then(
-                (data) => {
-                    if (data) {
-                        redirect(teams[teamId].name, data.channel.name);
-                    } else {
-                        redirect(teams[teamId].name, 'town-square');
-                    }
-                }
-            );
+            const {data} = await getChannelAndMyMember(channelId)(dispatch, getState);
+            if (data) {
+                redirect(teams[teamId].name, data.channel.name);
+            } else {
+                redirect(teams[teamId].name, 'town-square');
+            }
         } else {
             redirect(teams[teamId].name, 'town-square');
         }

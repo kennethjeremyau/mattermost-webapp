@@ -2,20 +2,18 @@
 // See License.txt for license information.
 
 import $ from 'jquery';
-import ReactDOM from 'react-dom';
 
+import PropTypes from 'prop-types';
+import React from 'react';
+import {Modal} from 'react-bootstrap';
+import ReactDOM from 'react-dom';
+import {FormattedMessage} from 'react-intl';
+
+import * as ChannelUtils from 'utils/channel_utils.jsx';
+import Constants from 'utils/constants.jsx';
 import {getShortenedURL} from 'utils/url.jsx';
 import * as UserAgent from 'utils/user_agent.jsx';
 import * as Utils from 'utils/utils.jsx';
-import * as ChannelUtils from 'utils/channel_utils.jsx';
-import Constants from 'utils/constants.jsx';
-
-import {FormattedMessage} from 'react-intl';
-
-import {Modal} from 'react-bootstrap';
-
-import React from 'react';
-import PropTypes from 'prop-types';
 
 export default class NewChannelModal extends React.PureComponent {
     static propTypes = {
@@ -169,27 +167,27 @@ export default class NewChannelModal extends React.PureComponent {
         }
 
         let createPublicChannelLink = (
-            <a
-                href='#'
+            <button
+                className='style--none color--link'
                 onClick={this.props.onTypeSwitched}
             >
                 <FormattedMessage
                     id='channel_modal.publicChannel1'
                     defaultMessage='Create a public channel'
                 />
-            </a>
+            </button>
         );
 
         let createPrivateChannelLink = (
-            <a
-                href='#'
+            <button
+                className='style--none color--link'
                 onClick={this.props.onTypeSwitched}
             >
                 <FormattedMessage
                     id='channel_modal.privateGroup2'
                     defaultMessage='Create a private channel'
                 />
-            </a>
+            </button>
         );
 
         if (!ChannelUtils.showCreateOption(Constants.OPEN_CHANNEL, this.props.isTeamAdmin, this.props.isSystemAdmin)) {
@@ -279,15 +277,18 @@ export default class NewChannelModal extends React.PureComponent {
                                     {displayNameError}
                                     <p className='input__help dark'>
                                         {'URL: ' + prettyTeamURL + this.props.channelData.name + ' ('}
-                                        <a
-                                            href='#'
-                                            onClick={this.props.onChangeURLPressed}
+                                        <button
+                                            className='color--link style--none'
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                this.props.onChangeURLPressed();
+                                            }}
                                         >
                                             <FormattedMessage
                                                 id='channel_modal.edit'
                                                 defaultMessage='Edit'
                                             />
-                                        </a>
+                                        </button>
                                         {')'}
                                     </p>
                                 </div>

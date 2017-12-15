@@ -1,12 +1,10 @@
-import PropTypes from 'prop-types';
-
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
 import React from 'react';
-
 import {FormattedMessage} from 'react-intl';
-import {Link} from 'react-router/es6';
+import {Link} from 'react-router';
 
 export default class BackstageNavbar extends React.Component {
     static get propTypes() {

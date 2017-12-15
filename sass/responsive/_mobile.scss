@@ -279,6 +279,18 @@
             }
         }
 
+        &.post--system {
+            .post__header {
+                .col__reply {
+                    min-width: 70px;
+                }
+            }
+        }
+
+        .post-add-reaction {
+            display: none;
+        }
+
         .reacticon__container {
             display: none;
         }
@@ -345,12 +357,31 @@
             padding: 0 10px 0 0;
         }
 
+        &.current--user {
+            .post__header {
+            }
+
+            &.same--root {
+                &.same--user {
+                    .post__header {
+                        margin-bottom: 7px;
+                    }
+                }
+            }
+
+            &.post--comment {
+                .post__header {
+                    margin-bottom: 3px;
+                }
+            }
+        }
+
         .post__header {
             margin-bottom: 0;
             padding-right: 70px;
 
             .col__reply {
-                top: -3px;
+                top: -6px;
                 width: 65px;
                 z-index: auto;
             }
@@ -414,7 +445,7 @@
             &.post--comment {
                 .post__header {
                     .col__reply {
-                        top: -3px;
+                        top: -6px;
                     }
                 }
             }
@@ -632,13 +663,18 @@
             .nav-pills {
                 > li {
                     &.active {
-                        a {
+                        button {
                             background: transparent;
 
                             &:before {
                                 display: none;
                             }
                         }
+                    }
+
+                    button {
+                        border-bottom: 1px solid;
+                        padding: 15px;
                     }
                 }
             }
@@ -657,6 +693,7 @@
                 .modal-image__wrapper {
                     > div {
                         font-size: 12px;
+                        max-width: 70%;
                         min-width: 250px;
                     }
 
@@ -812,6 +849,11 @@
                         .section-edit {
                             text-align: left;
 
+                            button {
+                                text-align: left;
+                                width: 100%;
+                            }
+
                             .fa {
                                 display: inline-block;
                             }
@@ -938,7 +980,8 @@
                 }
 
                 > li {
-                    > a {
+                    > a,
+                    > button {
                         border-bottom: 1px solid alpha-color($white, .3);
                         color: $white;
                         font-weight: 600;
@@ -1377,6 +1420,23 @@
 }
 
 @media screen and (max-width: 640px) {
+    .col__reply {
+        .dropdown-menu {
+            > li {
+                > button {
+                    border-top: 1px solid;
+                    padding: 15px 20px;
+                }
+
+                &:first-child {
+                    button {
+                        border: none;
+                    }
+                }
+            }
+        }
+    }
+
     .filtered-user-list {
         height: calc(100vh - 80px);
     }

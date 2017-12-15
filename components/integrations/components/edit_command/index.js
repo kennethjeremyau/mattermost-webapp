@@ -3,7 +3,8 @@
 
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
-import {getCustomTeamCommands, editCommand} from 'mattermost-redux/actions/integrations';
+
+import {editCommand, getCustomTeamCommands} from 'mattermost-redux/actions/integrations';
 import {getCommands} from 'mattermost-redux/selectors/entities/integrations';
 
 import EditCommand from './edit_command.jsx';
@@ -14,8 +15,7 @@ function mapStateToProps(state, ownProps) {
     return {
         ...ownProps,
         commandId,
-        commands: getCommands(state),
-        editCommandRequest: state.requests.integrations.editCommand
+        commands: getCommands(state)
     };
 }
 

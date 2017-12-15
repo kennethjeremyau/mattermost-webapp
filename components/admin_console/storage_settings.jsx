@@ -2,15 +2,15 @@
 // See License.txt for license information.
 
 import React from 'react';
+import {FormattedHTMLMessage, FormattedMessage} from 'react-intl';
 
 import * as Utils from 'utils/utils.jsx';
 
 import AdminSettings from './admin_settings.jsx';
+import BooleanSetting from './boolean_setting.jsx';
 import DropdownSetting from './dropdown_setting.jsx';
-import {FormattedMessage, FormattedHTMLMessage} from 'react-intl';
 import SettingsGroup from './settings_group.jsx';
 import TextSetting from './text_setting.jsx';
-import BooleanSetting from './boolean_setting.jsx';
 
 const DRIVER_LOCAL = 'local';
 const DRIVER_S3 = 'amazons3';
@@ -255,7 +255,7 @@ export default class StorageSettings extends AdminSettings {
                     helpText={
                         <FormattedMessage
                             id='admin.image.amazonS3RegionDescription'
-                            defaultMessage='(Optional) AWS region you selected when creating your S3 bucket. If no region is set, Mattermost attempts to get the appropriate region from AWS, or sets it to "us-east-1" if none found.'
+                            defaultMessage='AWS region you selected when creating your S3 bucket. If no region is set, Mattermost attempts to get the appropriate region from AWS, or sets it to "us-east-1" if none found.'
                         />
                     }
                     value={this.state.amazonS3Region}

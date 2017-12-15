@@ -1,26 +1,78 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import * as Utils from 'utils/utils.jsx';
-import UserStore from 'stores/user_store.jsx';
-import WebrtcStore from 'stores/webrtc_store.jsx';
-import TeamStore from 'stores/team_store.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {OverlayTrigger, Popover, Tooltip} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
+import {browserHistory} from 'react-router';
+
+import {openDirectChannelToUser} from 'actions/channel_actions.jsx';
 import * as GlobalActions from 'actions/global_actions.jsx';
 import * as WebrtcActions from 'actions/webrtc_actions.jsx';
-import {openDirectChannelToUser} from 'actions/channel_actions.jsx';
+import TeamStore from 'stores/team_store.jsx';
+import UserStore from 'stores/user_store.jsx';
+import WebrtcStore from 'stores/webrtc_store.jsx';
+
 import Constants from 'utils/constants.jsx';
+import * as Utils from 'utils/utils.jsx';
+
 const UserStatuses = Constants.UserStatuses;
 const PreReleaseFeatures = Constants.PRE_RELEASE_FEATURES;
 
-import {Popover, OverlayTrigger, Tooltip} from 'react-bootstrap';
-import {FormattedMessage} from 'react-intl';
-import {browserHistory} from 'react-router/es6';
-import PropTypes from 'prop-types';
-import React from 'react';
-
-export default class ProfilePopover extends React.Component {
+/**
+ * The profile popover, or hovercard, that appears with user information when clicking
+ * on the username or profile picture of a user.
+ */
+class ProfilePopover extends React.Component {
     static getComponentName() {
         return 'ProfilePopover';
+    }
+
+    static propTypes = {
+
+        /**
+         * Source URL from the image to display in the popover
+         */
+        src: PropTypes.string.isRequired,
+
+        /**
+         * User the popover is being opened for
+         */
+        user: PropTypes.object.isRequired,
+
+        /**
+         * Status for the user, either 'offline', 'away', 'dnd' or 'online'
+         */
+        status: PropTypes.string,
+
+        /**
+         * Set to true if the user is in a WebRTC call
+         */
+        isBusy: PropTypes.bool,
+
+        /**
+         * Function to call to hide the popover
+         */
+        hide: PropTypes.func,
+
+        /**
+         * Set to true if the popover was opened from the right-hand
+         * sidebar (comment thread, search results, etc.)
+         */
+        isRHS: PropTypes.bool,
+
+        /**
+         * @internal
+         */
+        hasMention: PropTypes.bool,
+
+        ...Popover.propTypes
+    }
+
+    static defaultProps = {
+        isRHS: false,
+        hasMention: false
     }
 
     constructor(props) {
@@ -29,6 +81,7 @@ export default class ProfilePopover extends React.Component {
         this.initWebrtc = this.initWebrtc.bind(this);
         this.handleShowDirectChannel = this.handleShowDirectChannel.bind(this);
         this.handleMentionKeyClick = this.handleMentionKeyClick.bind(this);
+        this.handleEditAccountSettings = this.handleEditAccountSettings.bind(this);
         this.state = {
             currentUserId: UserStore.getCurrentId(),
             loadingDMChannel: -1
@@ -118,6 +171,18 @@ export default class ProfilePopover extends React.Component {
             this.props.hide();
         }
         GlobalActions.emitPopoverMentionKeyClick(this.props.isRHS, this.props.user.username);
+    }
+
+    handleEditAccountSettings(e) {
+        e.preventDefault();
+
+        if (!this.props.user) {
+            return;
+        }
+        if (this.props.hide) {
+            this.props.hide();
+        }
+        GlobalActions.showAccountSettingsModal();
     }
 
     render() {
@@ -244,6 +309,27 @@ export default class ProfilePopover extends React.Component {
             );
         }
 
+        if (this.props.user.id === UserStore.getCurrentId()) {
+            dataContent.push(
+                <div
+                    data-toggle='tooltip'
+                    key='user-popover-settings'
+                    className='popover__row first'
+                >
+                    <a
+                        href='#'
+                        onClick={this.handleEditAccountSettings}
+                    >
+                        <i className='fa fa-pencil-square-o'/>
+                        <FormattedMessage
+                            id='user_profile.account.editSettings'
+                            defaultMessage='Edit Account Settings'
+                        />
+                    </a>
+                </div>
+            );
+        }
+
         if (this.props.user.id !== UserStore.getCurrentId()) {
             dataContent.push(
                 <div
@@ -284,18 +370,6 @@ export default class ProfilePopover extends React.Component {
     }
 }
 
-ProfilePopover.defaultProps = {
-    isRHS: false,
-    hasMention: false
-};
-
-ProfilePopover.propTypes = Object.assign({
-    src: PropTypes.string.isRequired,
-    user: PropTypes.object.isRequired,
-    status: PropTypes.string,
-    isBusy: PropTypes.bool,
-    hide: PropTypes.func,
-    isRHS: PropTypes.bool,
-    hasMention: PropTypes.bool
-}, Popover.propTypes);
 delete ProfilePopover.propTypes.id;
+
+export default ProfilePopover;

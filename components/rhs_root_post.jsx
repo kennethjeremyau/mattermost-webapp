@@ -1,31 +1,30 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import UserProfile from './user_profile.jsx';
-import PostBodyAdditionalContent from 'components/post_view/post_body_additional_content.jsx';
-import PostMessageContainer from 'components/post_view/post_message_view';
-import FileAttachmentListContainer from 'components/file_attachment_list';
-import ProfilePicture from 'components/profile_picture.jsx';
-import ReactionListContainer from 'components/post_view/reaction_list';
-import PostFlagIcon from 'components/post_view/post_flag_icon.jsx';
-import DotMenu from 'components/dot_menu';
-import EmojiPickerOverlay from 'components/emoji_picker/emoji_picker_overlay.jsx';
-
-import ChannelStore from 'stores/channel_store.jsx';
-import UserStore from 'stores/user_store.jsx';
-import TeamStore from 'stores/team_store.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+import {Link} from 'react-router';
 
 import {addReaction, emitEmojiPosted} from 'actions/post_actions.jsx';
-
-import * as Utils from 'utils/utils.jsx';
-import * as PostUtils from 'utils/post_utils.jsx';
+import UserStore from 'stores/user_store.jsx';
+import ChannelStore from 'stores/channel_store.jsx';
+import TeamStore from 'stores/team_store.jsx';
 
 import Constants from 'utils/constants.jsx';
+import * as PostUtils from 'utils/post_utils.jsx';
+import * as Utils from 'utils/utils.jsx';
 
-import React from 'react';
-import PropTypes from 'prop-types';
-import {Link} from 'react-router/es6';
-import {FormattedMessage} from 'react-intl';
+import DotMenu from 'components/dot_menu';
+import EmojiPickerOverlay from 'components/emoji_picker/emoji_picker_overlay.jsx';
+import FileAttachmentListContainer from 'components/file_attachment_list';
+import PostBodyAdditionalContent from 'components/post_view/post_body_additional_content.jsx';
+import PostFlagIcon from 'components/post_view/post_flag_icon.jsx';
+import PostMessageContainer from 'components/post_view/post_message_view';
+import ReactionListContainer from 'components/post_view/reaction_list';
+import ProfilePicture from 'components/profile_picture.jsx';
+
+import UserProfile from './user_profile.jsx';
 
 export default class RhsRootPost extends React.Component {
     static propTypes = {
@@ -38,7 +37,9 @@ export default class RhsRootPost extends React.Component {
         isFlagged: PropTypes.bool,
         status: PropTypes.string,
         previewCollapsed: PropTypes.string,
-        isBusy: PropTypes.bool
+        previewEnabled: PropTypes.bool,
+        isBusy: PropTypes.bool,
+        isEmbedVisible: PropTypes.bool
     }
 
     static defaultProps = {
@@ -94,7 +95,11 @@ export default class RhsRootPost extends React.Component {
             return true;
         }
 
-        if (nextProps.previewCollapsed !== this.props.previewCollapsed) {
+        if (nextProps.isEmbedVisible !== this.props.isEmbedVisible) {
+            return true;
+        }
+
+        if (nextProps.previewEnabled !== this.props.previewEnabled) {
             return true;
         }
 
@@ -118,32 +123,44 @@ export default class RhsRootPost extends React.Component {
             return true;
         }
 
+        if (this.props.previewCollapsed !== nextProps.previewCollapsed) {
+            return true;
+        }
+
         return false;
     }
 
     timeTag(post, timeOptions) {
+        const date = Utils.getDateForUnixTicks(post.create_at);
+
         return (
             <time
                 className='post__time'
-                dateTime={Utils.getDateForUnixTicks(post.create_at).toISOString()}
+                dateTime={date.toISOString()}
+                title={date}
             >
-                {Utils.getDateForUnixTicks(post.create_at).toLocaleString('en', timeOptions)}
+                {date.toLocaleString('en', timeOptions)}
             </time>
         );
     }
 
     renderTimeTag(post, timeOptions) {
-        return Utils.isMobile() ?
-            this.timeTag(post, timeOptions) :
-            (
-                <Link
-                    to={`/${this.state.currentTeamDisplayName}/pl/${post.id}`}
-                    target='_blank'
-                    className='post__permalink'
-                >
-                    {this.timeTag(post, timeOptions)}
-                </Link>
-            );
+        if (post.type === Constants.PostTypes.FAKE_PARENT_DELETED) {
+            return null;
+        }
+
+        if (Utils.isMobile()) {
+            return this.timeTag(post, timeOptions);
+        }
+
+        return (
+            <Link
+                to={`/${this.state.currentTeamDisplayName}/pl/${post.id}`}
+                className='post__permalink'
+            >
+                {this.timeTag(post, timeOptions)}
+            </Link>
+        );
     }
 
     toggleEmojiPicker = () => {
@@ -231,9 +248,8 @@ export default class RhsRootPost extends React.Component {
                         spaceRequiredAbove={342}
                         spaceRequiredBelow={342}
                     />
-                    <a
-                        href='#'
-                        className='reacticon__container reaction'
+                    <button
+                        className='reacticon__container reaction color--link style--none'
                         onClick={this.toggleEmojiPicker}
                         ref='rhs_root_reacticon'
                     >
@@ -241,7 +257,7 @@ export default class RhsRootPost extends React.Component {
                             className='icon icon--emoji'
                             dangerouslySetInnerHTML={{__html: Constants.EMOJI_ICON_SVG}}
                         />
-                    </a>
+                    </button>
                 </span>
 
             );
@@ -257,18 +273,23 @@ export default class RhsRootPost extends React.Component {
             );
         }
 
-        let userProfile = (
-            <UserProfile
-                user={user}
-                status={this.props.status}
-                isBusy={this.props.isBusy}
-                isRHS={true}
-                hasMention={true}
-            />
-        );
+        let userProfile;
         let botIndicator;
-
-        if (post.props && post.props.from_webhook) {
+        if (isSystemMessage) {
+            userProfile = (
+                <UserProfile
+                    user={{}}
+                    overwriteName={
+                        <FormattedMessage
+                            id='post_info.system'
+                            defaultMessage='System'
+                        />
+                    }
+                    overwriteImage={Constants.SYSTEM_MESSAGE_PROFILE_IMAGE}
+                    disablePopover={true}
+                />
+            );
+        } else if (post.props && post.props.from_webhook) {
             if (post.props.override_username && global.window.mm_config.EnablePostUsernameOverride === 'true') {
                 userProfile = (
                     <UserProfile
@@ -287,18 +308,14 @@ export default class RhsRootPost extends React.Component {
             }
 
             botIndicator = <div className='col col__name bot-indicator'>{'BOT'}</div>;
-        } else if (isSystemMessage) {
+        } else {
             userProfile = (
                 <UserProfile
-                    user={{}}
-                    overwriteName={
-                        <FormattedMessage
-                            id='post_info.system'
-                            defaultMessage='System'
-                        />
-                    }
-                    overwriteImage={Constants.SYSTEM_MESSAGE_PROFILE_IMAGE}
-                    disablePopover={true}
+                    user={user}
+                    status={this.props.status}
+                    isBusy={this.props.isBusy}
+                    isRHS={true}
+                    hasMention={true}
                 />
             );
         }
@@ -308,20 +325,15 @@ export default class RhsRootPost extends React.Component {
             status = null;
         }
 
-        let profilePic = (
-            <ProfilePicture
-                src={PostUtils.getProfilePicSrcForPost(post, user)}
-                status={status}
-                width='36'
-                height='36'
-                user={this.props.user}
-                isBusy={this.props.isBusy}
-                isRHS={true}
-                hasMention={true}
-            />
-        );
-
-        if (post.props && post.props.from_webhook) {
+        let profilePic;
+        if (isSystemMessage) {
+            profilePic = (
+                <span
+                    className='icon'
+                    dangerouslySetInnerHTML={{__html: mattermostLogo}}
+                />
+            );
+        } else if (post.props && post.props.from_webhook) {
             profilePic = (
                 <ProfilePicture
                     src={PostUtils.getProfilePicSrcForPost(post, user)}
@@ -329,13 +341,17 @@ export default class RhsRootPost extends React.Component {
                     height='36'
                 />
             );
-        }
-
-        if (isSystemMessage) {
+        } else {
             profilePic = (
-                <span
-                    className='icon'
-                    dangerouslySetInnerHTML={{__html: mattermostLogo}}
+                <ProfilePicture
+                    src={PostUtils.getProfilePicSrcForPost(post, user)}
+                    status={status}
+                    width='36'
+                    height='36'
+                    user={this.props.user}
+                    isBusy={this.props.isBusy}
+                    isRHS={true}
+                    hasMention={true}
                 />
             );
         }
@@ -396,6 +412,30 @@ export default class RhsRootPost extends React.Component {
             />
         );
 
+        let dotMenuContainer;
+        if (this.props.post.type !== Constants.PostTypes.FAKE_PARENT_DELETED) {
+            dotMenuContainer = (
+                <div
+                    ref='dotMenu'
+                    className='col col__reply'
+                >
+                    {dotMenu}
+                    {react}
+                </div>
+            );
+        }
+
+        let postFlagIcon;
+        if (this.props.post.type !== Constants.PostTypes.FAKE_PARENT_DELETED) {
+            postFlagIcon = (
+                <PostFlagIcon
+                    idPrefix={'rhsRootPostFlag'}
+                    postId={post.id}
+                    isFlagged={this.props.isFlagged}
+                />
+            );
+        }
+
         return (
             <div
                 id='thread--root'
@@ -411,25 +451,17 @@ export default class RhsRootPost extends React.Component {
                             <div className='col'>
                                 {this.renderTimeTag(post, timeOptions)}
                                 {pinnedBadge}
-                                <PostFlagIcon
-                                    idPrefix={'rhsRootPostFlag'}
-                                    postId={post.id}
-                                    isFlagged={this.props.isFlagged}
-                                />
+                                {postFlagIcon}
                             </div>
-                            <div
-                                ref='dotMenu'
-                                className='col col__reply'
-                            >
-                                {dotMenu}
-                                {react}
-                            </div>
+                            {dotMenuContainer}
                         </div>
                         <div className='post__body'>
                             <div className={postClass}>
                                 <PostBodyAdditionalContent
                                     post={post}
                                     previewCollapsed={this.props.previewCollapsed}
+                                    previewEnabled={this.props.previewEnabled}
+                                    isEmbedVisible={this.props.isEmbedVisible}
                                 >
                                     <PostMessageContainer
                                         post={post}

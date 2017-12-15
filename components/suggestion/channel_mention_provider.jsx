@@ -1,17 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import Suggestion from './suggestion.jsx';
-import Provider from './provider.jsx';
+import React from 'react';
 
 import {autocompleteChannels} from 'actions/channel_actions.jsx';
-
+import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
 import ChannelStore from 'stores/channel_store.jsx';
 
-import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
-import {Constants, ActionTypes} from 'utils/constants.jsx';
+import {ActionTypes, Constants} from 'utils/constants.jsx';
 
-import React from 'react';
+import Provider from './provider.jsx';
+import Suggestion from './suggestion.jsx';
 
 class ChannelMentionSuggestion extends Suggestion {
     render() {
@@ -54,7 +53,7 @@ export default class ChannelMentionProvider extends Provider {
     constructor() {
         super();
 
-        this.lastTermWithNoResults = '';
+        this.lastPrefixWithNoResults = '';
         this.lastCompletedWord = '';
     }
 
@@ -66,7 +65,9 @@ export default class ChannelMentionProvider extends Provider {
             return false;
         }
 
-        if (this.lastTermWithNoResults && pretext.startsWith(this.lastTermWithNoResults)) {
+        const prefix = captured[3];
+
+        if (this.lastPrefixWithNoResults && prefix.startsWith(this.lastPrefixWithNoResults)) {
             // Just give up since we know it won't return any results
             return false;
         }
@@ -79,8 +80,6 @@ export default class ChannelMentionProvider extends Provider {
         // Clear the last completed word since we've started to match new text
         this.lastCompletedWord = '';
 
-        const prefix = captured[3];
-
         this.startNewRequest(suggestionId, prefix);
 
         autocompleteChannels(
@@ -91,7 +90,7 @@ export default class ChannelMentionProvider extends Provider {
                 }
 
                 if (channels.length === 0) {
-                    this.lastTermWithNoResults = pretext;
+                    this.lastPrefixWithNoResults = prefix;
                 }
 
                 // Wrap channels in an outer object to avoid overwriting the 'type' property.
@@ -139,5 +138,6 @@ export default class ChannelMentionProvider extends Provider {
 
     handleCompleteWord(term) {
         this.lastCompletedWord = term;
+        this.lastPrefixWithNoResults = '';
     }
 }

@@ -1,16 +1,16 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import LoadingScreen from 'components/loading_screen.jsx';
-import RevokeTokenButton from 'components/admin_console/revoke_token_button';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {Modal} from 'react-bootstrap';
+import {FormattedHTMLMessage, FormattedMessage} from 'react-intl';
 
 import {Client4} from 'mattermost-redux/client';
 import * as UserUtils from 'mattermost-redux/utils/user_utils';
 
-import React from 'react';
-import {Modal} from 'react-bootstrap';
-import PropTypes from 'prop-types';
-import {FormattedMessage, FormattedHTMLMessage} from 'react-intl';
+import RevokeTokenButton from 'components/admin_console/revoke_token_button';
+import LoadingScreen from 'components/loading_screen.jsx';
 
 export default class ManageTokensModal extends React.PureComponent {
     static propTypes = {
@@ -146,7 +146,7 @@ export default class ManageTokensModal extends React.PureComponent {
                 <div className='padding-top x2'>
                     <FormattedHTMLMessage
                         id='admin.manage_tokens.userAccessTokensDescription'
-                        defaultMessage='Personal access tokens function similar to session tokens and can be used by integrations to <a href="https://about.mattermost.com/default-api-authentication" target="_blank">interact with this Mattermost server</a>. Learn more about <a href="https://about.mattermost.com/default-user-access-tokens" target="_blank">personal access tokens</a>.'
+                        defaultMessage='Personal access tokens function similarly to session tokens and can be used by integrations to <a href="https://about.mattermost.com/default-api-authentication" target="_blank">interact with this Mattermost server</a>. Tokens are disabled if the user is deactivated. Learn more about <a href="https://about.mattermost.com/default-user-access-tokens" target="_blank">personal access tokens</a>.'
                     />
                 </div>
                 <div className='manage-teams__teams'>

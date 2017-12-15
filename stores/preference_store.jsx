@@ -1,16 +1,20 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import Constants from 'utils/constants.jsx';
-const ActionTypes = Constants.ActionTypes;
-import AppDispatcher from '../dispatcher/app_dispatcher.jsx';
 import EventEmitter from 'events';
 
-const CHANGE_EVENT = 'change';
+import {PreferenceTypes} from 'mattermost-redux/action_types';
+import * as Selectors from 'mattermost-redux/selectors/entities/preferences';
 
 import store from 'stores/redux_store.jsx';
-import * as Selectors from 'mattermost-redux/selectors/entities/preferences';
-import {PreferenceTypes} from 'mattermost-redux/action_types';
+
+import Constants from 'utils/constants.jsx';
+
+import AppDispatcher from '../dispatcher/app_dispatcher.jsx';
+
+const ActionTypes = Constants.ActionTypes;
+
+const CHANGE_EVENT = 'change';
 
 class PreferenceStore extends EventEmitter {
     constructor() {
@@ -27,15 +31,16 @@ class PreferenceStore extends EventEmitter {
 
         store.subscribe(() => {
             const newEntities = Selectors.getMyPreferences(store.getState());
-            if (this.entities !== newEntities) {
+            const entities = this.entities;
+            this.entities = newEntities;
+
+            if (entities !== newEntities) {
                 this.preferences = new Map();
                 Object.keys(newEntities).forEach((key) => {
                     this.preferences.set(key, newEntities[key].value);
                 });
                 this.emitChange();
             }
-
-            this.entities = newEntities;
         });
 
         this.setMaxListeners(600);
@@ -132,22 +137,8 @@ class PreferenceStore extends EventEmitter {
         this.removeListener(CHANGE_EVENT, callback);
     }
 
-    getTheme(teamId) {
-        if (this.preferences.has(this.getKey(Constants.Preferences.CATEGORY_THEME, teamId))) {
-            return this.getObject(Constants.Preferences.CATEGORY_THEME, teamId);
-        }
-
-        if (this.preferences.has(this.getKey(Constants.Preferences.CATEGORY_THEME, ''))) {
-            return this.getObject(Constants.Preferences.CATEGORY_THEME, '');
-        }
-
-        for (const k in Constants.THEMES) {
-            if (Constants.THEMES.hasOwnProperty(k) && k === global.mm_config.DefaultTheme) {
-                return Constants.THEMES[k];
-            }
-        }
-
-        return Constants.THEMES.default;
+    getTheme() {
+        return Selectors.getTheme(store.getState());
     }
 
     handleEventPayload(payload) {

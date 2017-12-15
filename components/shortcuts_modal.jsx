@@ -1,14 +1,14 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import Constants from 'utils/constants.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {Modal} from 'react-bootstrap';
+import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import ModalStore from 'stores/modal_store.jsx';
 
-import {intlShape, injectIntl, defineMessages} from 'react-intl';
-import {Modal} from 'react-bootstrap';
-import React from 'react';
-import PropTypes from 'prop-types';
+import Constants from 'utils/constants.jsx';
 
 const allShortcuts = defineMessages({
     mainHeader: {
@@ -97,12 +97,22 @@ const allShortcuts = defineMessages({
     },
     navMentions: {
         default: {
-            id: 'shortcuts.nav.mentions',
+            id: 'shortcuts.nav.recent_mentions',
             defaultMessage: 'Recent mentions:\tCtrl|Shift|M'
         },
         mac: {
-            id: 'shortcuts.nav.mentions.mac',
+            id: 'shortcuts.nav.recent_mentions.mac',
             defaultMessage: 'Recent mentions:\t⌘|Shift|M'
+        }
+    },
+    navFocusCenter: {
+        default: {
+            id: 'shortcuts.nav.focus_center',
+            defaultMessage: 'Set focus to input field:\tCtrl|Shift|L'
+        },
+        mac: {
+            id: 'shortcuts.nav.focus_center.mac',
+            defaultMessage: 'Set focus to input field:\t⌘|Shift|L'
         }
     },
     msgHeader: {
@@ -259,9 +269,10 @@ class ShortcutsModal extends React.PureComponent {
         ModalStore.removeModalListener(Constants.ActionTypes.TOGGLE_SHORTCUTS_MODAL, this.handleToggle);
     }
 
-    handleToggle = (value) => {
+    handleToggle = () => {
+        //toggles the state of shortcut dialog
         this.setState({
-            show: value
+            show: !this.state.show
         });
     }
 
@@ -316,6 +327,7 @@ class ShortcutsModal extends React.PureComponent {
                                         {renderShortcut(formatMessage(shortcuts.navDMMenu))}
                                         {renderShortcut(formatMessage(shortcuts.navSettings))}
                                         {renderShortcut(formatMessage(shortcuts.navMentions))}
+                                        {renderShortcut(formatMessage(shortcuts.navFocusCenter))}
                                     </div>
                                 </div>
                             </div>

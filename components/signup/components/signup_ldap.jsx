@@ -1,23 +1,22 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import FormError from 'components/form_error.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedHTMLMessage, FormattedMessage} from 'react-intl';
+import {browserHistory, Link} from 'react-router';
 
+import {trackEvent} from 'actions/diagnostics_actions.jsx';
 import * as GlobalActions from 'actions/global_actions.jsx';
 import {addUserToTeamFromInvite} from 'actions/team_actions.jsx';
 import {loadMe, webLoginByLdap} from 'actions/user_actions.jsx';
-import {trackEvent} from 'actions/diagnostics_actions.jsx';
 
 import * as Utils from 'utils/utils.jsx';
 
-import PropTypes from 'prop-types';
-
-import React from 'react';
-import {FormattedMessage, FormattedHTMLMessage} from 'react-intl';
-import {browserHistory, Link} from 'react-router/es6';
-
 import logoImage from 'images/logo.png';
+
 import BackButton from 'components/common/back_button.jsx';
+import FormError from 'components/form_error.jsx';
 
 export default class SignupLdap extends React.Component {
     static get propTypes() {
@@ -244,7 +243,7 @@ export default class SignupLdap extends React.Component {
                             {' '}
                             <Link
                                 to={'/login'}
-                                query={this.props.location.query}
+                                query={Utils.isEmptyObject(this.props.location.query) ? null : this.props.location.query}
                             >
                                 <FormattedMessage
                                     id='signup_user_completed.signIn'

@@ -1,27 +1,27 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import SuggestionList from 'components/suggestion/suggestion_list.jsx';
-import SuggestionBox from 'components/suggestion/suggestion_box.jsx';
-import SwitchChannelProvider from 'components/suggestion/switch_channel_provider.jsx';
-import SwitchTeamProvider from 'components/suggestion/switch_team_provider.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {Modal} from 'react-bootstrap';
+import {FormattedMessage} from 'react-intl';
+import {browserHistory} from 'react-router';
+
+import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 import {goToChannel, openDirectChannelToUser} from 'actions/channel_actions.jsx';
+import store from 'stores/redux_store.jsx';
 
 import Constants from 'utils/constants.jsx';
 import * as Utils from 'utils/utils.jsx';
+import * as UserAgent from 'utils/user_agent.jsx';
 
-import React from 'react';
-import PropTypes from 'prop-types';
-import {browserHistory} from 'react-router/es6';
-import {Modal} from 'react-bootstrap';
-import {FormattedMessage} from 'react-intl';
+import SuggestionBox from 'components/suggestion/suggestion_box.jsx';
+import SuggestionList from 'components/suggestion/suggestion_list.jsx';
+import SwitchChannelProvider from 'components/suggestion/switch_channel_provider.jsx';
+import SwitchTeamProvider from 'components/suggestion/switch_team_provider.jsx';
 
-// Redux actions
-import store from 'stores/redux_store.jsx';
 const getState = store.getState;
-
-import {getChannel} from 'mattermost-redux/selectors/entities/channels';
 
 const CHANNEL_MODE = 'channel';
 const TEAM_MODE = 'team';
@@ -72,16 +72,12 @@ export default class QuickSwitchModal extends React.PureComponent {
         this.channelProviders = [new SwitchChannelProvider()];
         this.teamProviders = [new SwitchTeamProvider()];
 
+        this.switchBox = null;
+
         this.state = {
             text: '',
             mode: props.initialMode
         };
-    }
-
-    componentDidUpdate(prevProps) {
-        if (this.props.show && !prevProps.show) {
-            this.focusTextbox();
-        }
     }
 
     componentWillReceiveProps(nextProps) {
@@ -91,13 +87,20 @@ export default class QuickSwitchModal extends React.PureComponent {
     }
 
     focusTextbox() {
-        if (this.refs.switchbox == null) {
+        if (this.switchBox == null) {
             return;
         }
 
-        const textbox = this.refs.switchbox.getTextbox();
-        textbox.focus();
-        Utils.placeCaretAtEnd(textbox);
+        const textbox = this.switchBox.getTextbox();
+        if (document.activeElement !== textbox) {
+            textbox.focus();
+            Utils.placeCaretAtEnd(textbox);
+        }
+    }
+
+    setSwitchBoxRef = (input) => {
+        this.switchBox = input;
+        this.focusTextbox();
     }
 
     onShow() {
@@ -114,9 +117,14 @@ export default class QuickSwitchModal extends React.PureComponent {
     }
 
     onExited() {
-        setTimeout(() => {
-            document.querySelector('#post_textbox').focus();
-        });
+        if (!UserAgent.isMobile()) {
+            setTimeout(() => {
+                const textbox = document.querySelector('#post_textbox');
+                if (textbox) {
+                    textbox.focus();
+                }
+            });
+        }
     }
 
     onChange(e) {
@@ -309,7 +317,7 @@ export default class QuickSwitchModal extends React.PureComponent {
                         {help}
                     </div>
                     <SuggestionBox
-                        ref='switchbox'
+                        ref={this.setSwitchBoxRef}
                         className='form-control focused'
                         type='input'
                         onChange={this.onChange}

@@ -1,26 +1,27 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import AppDispatcher from '../dispatcher/app_dispatcher.jsx';
 import EventEmitter from 'events';
 
-import ChannelStore from 'stores/channel_store.jsx';
+import * as Selectors from 'mattermost-redux/selectors/entities/posts';
+
 import BrowserStore from 'stores/browser_store.jsx';
+import ChannelStore from 'stores/channel_store.jsx';
+import store from 'stores/redux_store.jsx';
 import UserStore from 'stores/user_store.jsx';
 
-import * as PostUtils from 'utils/post_utils.jsx';
 import {Constants} from 'utils/constants.jsx';
+import * as PostUtils from 'utils/post_utils.jsx';
+
+import AppDispatcher from '../dispatcher/app_dispatcher.jsx';
+
 const ActionTypes = Constants.ActionTypes;
 
 const FOCUSED_POST_CHANGE = 'focused_post_change';
-const EDIT_POST_EVENT = 'edit_post';
 const POST_PINNED_CHANGE_EVENT = 'post_pinned_change';
 
-import store from 'stores/redux_store.jsx';
 const dispatch = store.dispatch;
 const getState = store.getState;
-
-import * as Selectors from 'mattermost-redux/selectors/entities/posts';
 
 class PostStoreClass extends EventEmitter {
     constructor() {
@@ -41,18 +42,6 @@ class PostStoreClass extends EventEmitter {
         this.removeListener(FOCUSED_POST_CHANGE, callback);
     }
 
-    emitEditPost(post) {
-        this.emit(EDIT_POST_EVENT, post);
-    }
-
-    addEditPostListener(callback) {
-        this.on(EDIT_POST_EVENT, callback);
-    }
-
-    removeEditPostListner(callback) {
-        this.removeListener(EDIT_POST_EVENT, callback);
-    }
-
     emitPostPinnedChange() {
         this.emit(POST_PINNED_CHANGE_EVENT);
     }
@@ -65,9 +54,8 @@ class PostStoreClass extends EventEmitter {
         this.removeListener(POST_PINNED_CHANGE_EVENT, callback);
     }
 
-    getLatestPostId(channelId) {
-        const postsInChannel = getState().entities.posts.postsInChannel[channelId] || [];
-        return postsInChannel[0];
+    getMostRecentPostIdInChannel(channelId) {
+        return Selectors.getMostRecentPostIdInChannel(getState(), channelId);
     }
 
     getLatestReplyablePost(channelId) {
@@ -168,7 +156,8 @@ class PostStoreClass extends EventEmitter {
     }
 
     getDraft(channelId) {
-        return this.normalizeDraft(BrowserStore.getGlobalItem('draft_' + channelId));
+        // deep clone because many components need to modify the draft
+        return JSON.parse(JSON.stringify(this.normalizeDraft(BrowserStore.getGlobalItem('draft_' + channelId))));
     }
 
     storeCommentDraft(parentPostId, draft) {
@@ -176,24 +165,25 @@ class PostStoreClass extends EventEmitter {
     }
 
     getCommentDraft(parentPostId) {
-        return this.normalizeDraft(BrowserStore.getGlobalItem('comment_draft_' + parentPostId));
+        // deep clone because many components need to modify the draft
+        return JSON.parse(JSON.stringify(this.normalizeDraft(BrowserStore.getGlobalItem('comment_draft_' + parentPostId))));
     }
 
     clearDraftUploads() {
         BrowserStore.actionOnGlobalItemsWithPrefix('draft_', (key, value) => {
             if (value) {
-                value.uploadsInProgress = [];
-                BrowserStore.setGlobalItem(key, value);
+                return {...value, uploadsInProgress: []};
             }
+            return value;
         });
     }
 
     clearCommentDraftUploads() {
         BrowserStore.actionOnGlobalItemsWithPrefix('comment_draft_', (key, value) => {
             if (value) {
-                value.uploadsInProgress = [];
-                BrowserStore.setGlobalItem(key, value);
+                return {...value, uploadsInProgress: []};
             }
+            return value;
         });
     }
 
@@ -226,7 +216,7 @@ PostStore.dispatchToken = AppDispatcher.register((payload) => {
         PostStore.clearFocusedPost();
         break;
     case ActionTypes.RECEIVED_EDIT_POST:
-        PostStore.emitEditPost(action);
+        dispatch({...action, type: ActionTypes.EDIT_POST});
         break;
     case ActionTypes.RECEIVED_POST_SELECTED:
         dispatch({...action, type: ActionTypes.SELECT_POST});

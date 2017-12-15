@@ -1,28 +1,26 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import MultiSelect from 'components/multiselect/multiselect.jsx';
-import ProfilePicture from 'components/profile_picture.jsx';
-
-import {addUsersToTeam} from 'actions/team_actions.jsx';
-import {searchUsersNotInTeam} from 'actions/user_actions.jsx';
-
-import UserStore from 'stores/user_store.jsx';
-import TeamStore from 'stores/team_store.jsx';
-
-import Constants from 'utils/constants.jsx';
-import {displayEntireNameForUser} from 'utils/utils.jsx';
-import {Client4} from 'mattermost-redux/client';
-
 import PropTypes from 'prop-types';
-
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 import {FormattedMessage} from 'react-intl';
-import {browserHistory} from 'react-router/es6';
+import {browserHistory} from 'react-router';
 
-import store from 'stores/redux_store.jsx';
+import {Client4} from 'mattermost-redux/client';
 import {searchProfilesNotInCurrentTeam} from 'mattermost-redux/selectors/entities/users';
+
+import {addUsersToTeam} from 'actions/team_actions.jsx';
+import {searchUsersNotInTeam} from 'actions/user_actions.jsx';
+import store from 'stores/redux_store.jsx';
+import TeamStore from 'stores/team_store.jsx';
+import UserStore from 'stores/user_store.jsx';
+
+import Constants from 'utils/constants.jsx';
+import {displayEntireNameForUser, localizeMessage} from 'utils/utils.jsx';
+
+import MultiSelect from 'components/multiselect/multiselect.jsx';
+import ProfilePicture from 'components/profile_picture.jsx';
 
 const USERS_PER_PAGE = 50;
 const MAX_SELECTABLE_VALUES = 20;
@@ -53,7 +51,9 @@ export default class AddUsersToTeam extends React.Component {
             users: Object.assign([], UserStore.getProfileListNotInTeam(TeamStore.getCurrentId(), true)),
             values: [],
             show: true,
-            search: false
+            search: false,
+            saving: false,
+            addError: null
         };
     }
 
@@ -85,6 +85,18 @@ export default class AddUsersToTeam extends React.Component {
         }
     }
 
+    handleResponse(err) {
+        let addError = null;
+        if (err && err.message) {
+            addError = err.message;
+        }
+
+        this.setState({
+            saving: false,
+            addError
+        });
+    }
+
     handleSubmit(e) {
         if (e) {
             e.preventDefault();
@@ -95,9 +107,19 @@ export default class AddUsersToTeam extends React.Component {
             return;
         }
 
-        addUsersToTeam(TeamStore.getCurrentId(), userIds);
+        this.setState({saving: true});
 
-        this.handleHide();
+        addUsersToTeam(
+            TeamStore.getCurrentId(),
+            userIds,
+            () => {
+                this.handleResponse();
+                this.handleHide();
+            },
+            (err) => {
+                this.handleResponse(err);
+            }
+        );
     }
 
     addValue(value) {
@@ -208,16 +230,16 @@ export default class AddUsersToTeam extends React.Component {
             />
         );
 
-        const buttonSubmitText = (
-            <FormattedMessage
-                id='multiselect.add'
-                defaultMessage='Add'
-            />
-        );
+        const buttonSubmitText = localizeMessage('multiselect.add', 'Add');
 
         let users = [];
         if (this.state.users) {
             users = this.state.users.filter((user) => user.delete_at === 0);
+        }
+
+        let addError = null;
+        if (this.state.addError) {
+            addError = (<label className='has-error control-label'>{this.state.addError}</label>);
         }
 
         return (
@@ -241,6 +263,7 @@ export default class AddUsersToTeam extends React.Component {
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    {addError}
                     <MultiSelect
                         key='addUsersToTeamKey'
                         options={users}
@@ -256,6 +279,7 @@ export default class AddUsersToTeam extends React.Component {
                         maxValues={MAX_SELECTABLE_VALUES}
                         numRemainingText={numRemainingText}
                         buttonSubmitText={buttonSubmitText}
+                        saving={this.state.saving}
                     />
                 </Modal.Body>
             </Modal>

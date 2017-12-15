@@ -3,12 +3,21 @@
 
 // EXPERIMENTAL - SUBJECT TO CHANGE
 
-import store from 'stores/redux_store.jsx';
-import {ActionTypes} from 'utils/constants.jsx';
-import {getSiteURL} from 'utils/url.jsx';
 import {Client4} from 'mattermost-redux/client';
 
+import store from 'stores/redux_store.jsx';
+
+import {ActionTypes} from 'utils/constants.jsx';
+import {getSiteURL} from 'utils/url.jsx';
+
 window.plugins = {};
+
+// Common libraries exposed on window for plugins to access
+window.react = require('react');
+window['react-dom'] = require('react-dom');
+window.redux = require('redux');
+window['react-redux'] = require('react-redux');
+window['react-bootstrap'] = require('react-bootstrap');
 
 export function registerComponents(id, components = {}, postTypes = {}) {
     const wrappedComponents = {};

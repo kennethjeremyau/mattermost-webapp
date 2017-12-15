@@ -3,9 +3,9 @@
 
 import EventEmitter from 'events';
 
-const CHANGE_EVENT = 'changed';
-
 import store from 'stores/redux_store.jsx';
+
+const CHANGE_EVENT = 'changed';
 
 class IntegrationStore extends EventEmitter {
     constructor() {
@@ -15,11 +15,12 @@ class IntegrationStore extends EventEmitter {
 
         store.subscribe(() => {
             const newEntities = store.getState().entities.integrations;
-            if (newEntities !== this.entities) {
+            const entities = this.entities;
+            this.entities = newEntities;
+
+            if (newEntities !== entities) {
                 this.emitChange();
             }
-
-            this.entities = newEntities;
         });
     }
 

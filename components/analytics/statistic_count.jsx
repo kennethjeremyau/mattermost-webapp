@@ -1,35 +1,47 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
+import React from 'react';
 import {FormattedMessage} from 'react-intl';
 
-import PropTypes from 'prop-types';
+export default class StatisticCount extends React.PureComponent {
+    static propTypes = {
 
-import React from 'react';
+        /*
+         * Statistic title
+         */
+        title: PropTypes.node.isRequired,
 
-export default function StatisticCount(props) {
-    const loading = (
-        <FormattedMessage
-            id='analytics.chart.loading'
-            defaultMessage='Loading...'
-        />
-    );
+        /*
+         * Statistic icon
+         */
+        icon: PropTypes.string.isRequired,
 
-    return (
-        <div className='col-md-3 col-sm-6'>
-            <div className='total-count'>
-                <div className='title'>
-                    {props.title}
-                    <i className={'fa ' + props.icon}/>
+        /*
+         * Data count
+         */
+        count: PropTypes.number
+    }
+
+    render() {
+        const loading = (
+            <FormattedMessage
+                id='analytics.chart.loading'
+                defaultMessage='Loading...'
+            />
+        );
+
+        return (
+            <div className='col-md-3 col-sm-6'>
+                <div className='total-count'>
+                    <div className='title'>
+                        {this.props.title}
+                        <i className={'fa ' + this.props.icon}/>
+                    </div>
+                    <div className='content'>{this.props.count == null ? loading : this.props.count}</div>
                 </div>
-                <div className='content'>{props.count == null ? loading : props.count}</div>
             </div>
-        </div>
-    );
+        );
+    }
 }
-
-StatisticCount.propTypes = {
-    title: PropTypes.node.isRequired,
-    icon: PropTypes.string.isRequired,
-    count: PropTypes.number
-};

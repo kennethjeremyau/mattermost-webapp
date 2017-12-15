@@ -1,13 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
 import React from 'react';
 import {Dropdown} from 'react-bootstrap';
-import StatusIcon from 'components/status_icon.jsx';
-import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
+
 import {UserStatuses} from 'utils/constants.jsx';
+import {localizeMessage} from 'utils/utils.jsx';
+
 import BootstrapSpan from 'components/bootstrap_span.jsx';
+import StatusIcon from 'components/status_icon.jsx';
 
 export default class StatusDropdown extends React.Component {
 
@@ -22,16 +25,7 @@ export default class StatusDropdown extends React.Component {
     }
 
     state = {
-        showDropdown: false,
-        mouseOver: false
-    }
-
-    onMouseEnter = () => {
-        this.setState({mouseOver: true});
-    }
-
-    onMouseLeave = () => {
-        this.setState({mouseOver: false});
+        showDropdown: false
     }
 
     onToggle = (showDropdown) => {
@@ -65,6 +59,11 @@ export default class StatusDropdown extends React.Component {
         this.setStatus(UserStatuses.AWAY);
     }
 
+    setDnd = (event) => {
+        event.preventDefault();
+        this.setStatus(UserStatuses.DND);
+    }
+
     renderStatusOnlineAction = () => {
         return this.renderStatusAction(UserStatuses.ONLINE, this.setOnline);
     }
@@ -75,6 +74,10 @@ export default class StatusDropdown extends React.Component {
 
     renderStatusOfflineAction = () => {
         return this.renderStatusAction(UserStatuses.OFFLINE, this.setOffline);
+    }
+
+    renderStatusDndAction = () => {
+        return this.renderStatusAction(UserStatuses.DND, this.setDnd, localizeMessage('status_dropdown.set_dnd.extra', 'Disables Desktop and Push Notifications'));
     }
 
     renderProfilePicture = () => {
@@ -89,10 +92,11 @@ export default class StatusDropdown extends React.Component {
         );
     }
 
-    renderStatusAction = (status, onClick) => {
+    renderStatusAction = (status, onClick, extraText) => {
         return (
             <li key={status}>
                 <a
+                    id={'status' + status}
                     href={'#'}
                     onClick={onClick}
                 >
@@ -100,34 +104,18 @@ export default class StatusDropdown extends React.Component {
                         id={`status_dropdown.set_${status}`}
                         defaultMessage={status}
                     />
+                    <span className='status-dropdown-extra'>{extraText}</span>
                 </a>
             </li>
         );
     }
 
-    renderStatusIcon = () => {
-        if (this.state.mouseOver) {
-            return (
-                <span className={'status status-edit'}>
-                    <i
-                        className={'fa fa-caret-down'}
-                    />
-                </span>
-            );
-        }
-        return (
-            <StatusIcon
-                status={this.props.status}
-            />
-        );
-    }
-
     render() {
-        const statusIcon = this.renderStatusIcon();
         const profilePicture = this.renderProfilePicture();
         const actions = [
             this.renderStatusOnlineAction(),
             this.renderStatusAwayAction(),
+            this.renderStatusDndAction(),
             this.renderStatusOfflineAction()
         ];
         return (
@@ -139,17 +127,16 @@ export default class StatusDropdown extends React.Component {
             >
                 <BootstrapSpan
                     bsRole={'toggle'}
-                    onMouseEnter={this.onMouseEnter}
-                    onMouseLeave={this.onMouseLeave}
                 >
-                    <div className='status-wrapper'>
+                    <div className='status-wrapper status-selector'>
                         {profilePicture}
-                        <div className='status_dropdown__toggle'>
-                            {statusIcon}
-                        </div>
+                        <StatusIcon status={this.props.status}/>
+                        <span className={'status status-edit edit'}>
+                            <i className={'fa fa-caret-down'}/>
+                        </span>
                     </div>
                 </BootstrapSpan>
-                <Dropdown.Menu>
+                <Dropdown.Menu id='editStatusMenu'>
                     {actions}
                 </Dropdown.Menu>
             </Dropdown>

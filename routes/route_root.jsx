@@ -1,21 +1,21 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import * as RouteUtils from 'routes/route_utils.jsx';
-
-import Root from 'components/root.jsx';
-
-import claimAccountRoute from 'routes/route_claim.jsx';
-import mfaRoute from 'routes/route_mfa.jsx';
-import createTeamRoute from 'routes/route_create_team.jsx';
-import teamRoute from 'routes/route_team.jsx';
-import helpRoute from 'routes/route_help.jsx';
+import {browserHistory} from 'react-router';
 
 import BrowserStore from 'stores/browser_store.jsx';
 import ErrorStore from 'stores/error_store.jsx';
+
+import claimAccountRoute from 'routes/route_claim.jsx';
+import createTeamRoute from 'routes/route_create_team.jsx';
+import helpRoute from 'routes/route_help.jsx';
+import mfaRoute from 'routes/route_mfa.jsx';
+import teamRoute from 'routes/route_team.jsx';
+import * as RouteUtils from 'routes/route_utils.jsx';
+
 import * as UserAgent from 'utils/user_agent.jsx';
 
-import {browserHistory} from 'react-router/es6';
+import Root from 'components/root.jsx';
 
 function preLogin(nextState, replace, callback) {
     // redirect to the mobile landing page if the user hasn't seen it before
@@ -47,7 +47,7 @@ export default {
         [
             {
                 getComponents: (location, callback) => {
-                    System.import('components/header_footer_template.jsx').then(RouteUtils.importComponentSuccess(callback));
+                    System.import('components/header_footer_template').then(RouteUtils.importComponentSuccess(callback));
                 },
                 getChildRoutes: RouteUtils.createGetChildComponentsFunction(
                     [
@@ -142,7 +142,7 @@ export default {
                         },
                         {
                             getComponents: (location, callback) => {
-                                System.import('components/header_footer_template.jsx').then(RouteUtils.importComponentSuccess(callback));
+                                System.import('components/header_footer_template').then(RouteUtils.importComponentSuccess(callback));
                             },
                             getChildRoutes: RouteUtils.createGetChildComponentsFunction(
                                 [
@@ -153,7 +153,7 @@ export default {
                                         }
                                     },
                                     {
-                                        path: '*authorize',
+                                        path: 'oauth/authorize',
                                         getComponents: (location, callback) => {
                                             System.import('components/authorize.jsx').then(RouteUtils.importComponentSuccess(callback));
                                         }

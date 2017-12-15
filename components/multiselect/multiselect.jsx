@@ -1,17 +1,19 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+import ReactSelect from 'react-select';
+
+import Constants from 'utils/constants.jsx';
+import {localizeMessage} from 'utils/utils.jsx';
+
+import SaveButton from 'components/save_button.jsx';
+
 import MultiSelectList from './multiselect_list.jsx';
 
-import {localizeMessage} from 'utils/utils.jsx';
-import Constants from 'utils/constants.jsx';
 const KeyCodes = Constants.KeyCodes;
-
-import PropTypes from 'prop-types';
-
-import React from 'react';
-import ReactSelect from 'react-select';
-import {FormattedMessage} from 'react-intl';
 
 export default class MultiSelect extends React.Component {
     constructor(props) {
@@ -67,7 +69,7 @@ export default class MultiSelect extends React.Component {
         }
 
         for (let i = 0; i < this.props.values.length; i++) {
-            if (this.props.values[i].value === value.value) {
+            if (this.props.values[i].id === value.id) {
                 return;
             }
         }
@@ -77,6 +79,16 @@ export default class MultiSelect extends React.Component {
         this.refs.select.handleInputChange({target: {value: ''}});
         this.onInput('');
         this.refs.select.focus();
+
+        const submitImmediatelyOn = this.props.submitImmediatelyOn;
+        if (submitImmediatelyOn) {
+            for (let i = 0; i < submitImmediatelyOn.length; i++) {
+                if (submitImmediatelyOn[i] === value.id) {
+                    this.props.handleSubmit([value]);
+                    return;
+                }
+            }
+        }
     }
 
     onInput = (input) => {
@@ -90,6 +102,14 @@ export default class MultiSelect extends React.Component {
         this.props.handleInput(input);
     }
 
+    onInputKeyDown = (e) => {
+        switch (e.keyCode) {
+        case KeyCodes.ENTER:
+            e.preventDefault();
+            break;
+        }
+    }
+
     handleEnterPress = (e) => {
         switch (e.keyCode) {
         case KeyCodes.ENTER:
@@ -100,6 +120,11 @@ export default class MultiSelect extends React.Component {
             this.onAdd(this.selected);
             break;
         }
+    }
+
+    handleOnClick = (e) => {
+        e.preventDefault();
+        this.props.handleSubmit();
     }
 
     onChange = (values) => {
@@ -212,6 +237,7 @@ export default class MultiSelect extends React.Component {
                             clearable={false}
                             openOnFocus={true}
                             onInputChange={this.onInput}
+                            onInputKeyDown={this.onInputKeyDown}
                             onBlurResetsInput={false}
                             onCloseResetsInput={false}
                             onChange={this.onChange}
@@ -222,12 +248,12 @@ export default class MultiSelect extends React.Component {
                             noResultsText={null}
                             placeholder={localizeMessage('multiselect.placeholder', 'Search and add members')}
                         />
-                        <button
-                            className='btn btn-primary btn-sm'
-                            onClick={this.props.handleSubmit}
-                        >
-                            {buttonSubmitText}
-                        </button>
+                        <SaveButton
+                            saving={this.props.saving}
+                            disabled={this.props.saving}
+                            onClick={this.handleOnClick}
+                            defaultMessage={buttonSubmitText}
+                        />
                     </div>
                     <div className='multi-select__help'>
                         {numRemainingText}
@@ -267,5 +293,7 @@ MultiSelect.propTypes = {
     noteText: PropTypes.node,
     maxValues: PropTypes.number,
     numRemainingText: PropTypes.node,
-    buttonSubmitText: PropTypes.node
+    buttonSubmitText: PropTypes.node,
+    submitImmediatelyOn: PropTypes.arrayOf(PropTypes.string),
+    saving: PropTypes.bool
 };

@@ -3,8 +3,10 @@
 
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
+
 import {flagPost, unflagPost} from 'mattermost-redux/actions/posts';
-import {pinPost, unpinPost} from 'actions/post_actions.jsx';
+
+import {pinPost, unpinPost, setEditingPost} from 'actions/post_actions.jsx';
 
 import DotMenu from './dot_menu.jsx';
 
@@ -17,6 +19,7 @@ function mapDispatchToProps(dispatch) {
         actions: bindActionCreators({
             flagPost,
             unflagPost,
+            setEditingPost,
             pinPost,
             unpinPost
         }, dispatch)
@@ -24,4 +27,3 @@ function mapDispatchToProps(dispatch) {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(DotMenu);
-

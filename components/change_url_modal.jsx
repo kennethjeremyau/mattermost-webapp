@@ -1,17 +1,16 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
+import React from 'react';
+import {Modal, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import ReactDOM from 'react-dom';
-import Constants from 'utils/constants.jsx';
-import {Modal, Tooltip, OverlayTrigger} from 'react-bootstrap';
-import TeamStore from 'stores/team_store.jsx';
-import * as URL from 'utils/url.jsx';
-
 import {FormattedMessage} from 'react-intl';
 
-import PropTypes from 'prop-types';
+import TeamStore from 'stores/team_store.jsx';
 
-import React from 'react';
+import Constants from 'utils/constants.jsx';
+import * as URL from 'utils/url.jsx';
 
 export default class ChangeUrlModal extends React.Component {
     constructor(props) {
@@ -136,7 +135,7 @@ export default class ChangeUrlModal extends React.Component {
 
         if (this.props.serverError || this.state.urlError) {
             error = (
-                <div className='form-group has-error'>
+                <div className='has-error'>
                     <p className='input__help error'>
                         {this.state.urlError || this.props.serverError}
                     </p>
@@ -171,13 +170,13 @@ export default class ChangeUrlModal extends React.Component {
                             />
                         </div>
                         <div className='form-group'>
-                            <label className='col-sm-2 form__label control-label'>
+                            <label className='col-sm-3 form__label control-label'>
                                 <FormattedMessage
                                     id='change_url.urlLabel'
                                     defaultMessage='Channel URL'
                                 />
                             </label>
-                            <div className='col-sm-10'>
+                            <div className='col-sm-9'>
                                 <div className={urlClass}>
                                     <OverlayTrigger
                                         trigger={['hover', 'focus']}

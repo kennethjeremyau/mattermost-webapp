@@ -2,24 +2,27 @@
 // See License.txt for license information.
 
 import $ from 'jquery';
+
 import PropTypes from 'prop-types';
 import React from 'react';
-
-import Constants from 'utils/constants.jsx';
-import * as UserAgent from 'utils/user_agent.jsx';
-import ChannelHeader from 'components/channel_header.jsx';
-import FileUploadOverlay from 'components/file_upload_overlay.jsx';
-import CreatePost from 'components/create_post.jsx';
-import PostView from 'components/post_view';
-import TutorialView from 'components/tutorial/tutorial_view.jsx';
-const TutorialSteps = Constants.TutorialSteps;
-const Preferences = Constants.Preferences;
+import {FormattedMessage} from 'react-intl';
 
 import ChannelStore from 'stores/channel_store.jsx';
 import PreferenceStore from 'stores/preference_store.jsx';
 import UserStore from 'stores/user_store.jsx';
 
+import Constants from 'utils/constants.jsx';
+import * as UserAgent from 'utils/user_agent.jsx';
 import * as Utils from 'utils/utils.jsx';
+
+import ChannelHeader from 'components/channel_header';
+import CreatePost from 'components/create_post.jsx';
+import FileUploadOverlay from 'components/file_upload_overlay.jsx';
+import PostView from 'components/post_view';
+import TutorialView from 'components/tutorial/tutorial_view.jsx';
+
+const TutorialSteps = Constants.TutorialSteps;
+const Preferences = Constants.Preferences;
 
 export default class ChannelView extends React.Component {
     constructor(props) {
@@ -93,6 +96,33 @@ export default class ChannelView extends React.Component {
             );
         }
 
+        let createPost = (
+            <div
+                className='post-create__container'
+                id='post-create'
+            >
+                <CreatePost
+                    getChannelView={this.getChannelView}
+                />
+            </div>
+        );
+        const channel = ChannelStore.get(this.state.channelId);
+        if (channel.type === Constants.DM_CHANNEL) {
+            const teammate = Utils.getDirectTeammate(channel.id);
+            if (teammate && teammate.delete_at) {
+                createPost = (
+                    <div
+                        className='post-create-message'
+                    >
+                        <FormattedMessage
+                            id='create_post.deactivated'
+                            defaultMessage='You are viewing an archived channel with a deactivated user.'
+                        />
+                    </div>
+                );
+            }
+        }
+
         return (
             <div
                 ref='channelView'
@@ -106,12 +136,7 @@ export default class ChannelView extends React.Component {
                 <PostView
                     channelId={this.state.channelId}
                 />
-                <div
-                    className='post-create__container'
-                    id='post-create'
-                >
-                    <CreatePost getChannelView={this.getChannelView}/>
-                </div>
+                {createPost}
             </div>
         );
     }

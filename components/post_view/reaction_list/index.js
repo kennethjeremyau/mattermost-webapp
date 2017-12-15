@@ -3,10 +3,10 @@
 
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
-import {makeGetReactionsForPost} from 'mattermost-redux/selectors/entities/posts';
-import {getCustomEmojisByName} from 'mattermost-redux/selectors/entities/emojis';
 
 import * as Actions from 'mattermost-redux/actions/posts';
+import {getCustomEmojisByName} from 'mattermost-redux/selectors/entities/emojis';
+import {makeGetReactionsForPost} from 'mattermost-redux/selectors/entities/posts';
 
 import ReactionList from './reaction_list.jsx';
 
@@ -25,7 +25,8 @@ function makeMapStateToProps() {
 function mapDispatchToProps(dispatch) {
     return {
         actions: bindActionCreators({
-            getReactionsForPost: Actions.getReactionsForPost
+            getReactionsForPost: Actions.getReactionsForPost,
+            addReaction: Actions.addReaction
         }, dispatch)
     };
 }

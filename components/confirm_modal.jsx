@@ -1,9 +1,9 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
-import PropTypes from 'prop-types';
 import {FormattedMessage} from 'react-intl';
 
 export default class ConfirmModal extends React.Component {
@@ -28,6 +28,11 @@ export default class ConfirmModal extends React.Component {
          * The CSS class to apply to the confirm button
          */
         confirmButtonClass: PropTypes.string,
+
+        /*
+         * The CSS class to apply to the modal
+         */
+        modalClass: PropTypes.string,
 
         /*
          * Text/jsx element on the confirm button
@@ -64,7 +69,8 @@ export default class ConfirmModal extends React.Component {
         title: '',
         message: '',
         confirmButtonClass: 'btn btn-primary',
-        confirmButtonText: ''
+        confirmButtonText: '',
+        modalClass: ''
     }
 
     componentDidMount() {
@@ -131,7 +137,7 @@ export default class ConfirmModal extends React.Component {
 
         return (
             <Modal
-                className='modal-confirm'
+                className={'modal-confirm ' + this.props.modalClass}
                 show={this.props.show}
                 onHide={this.props.onCancel}
             >

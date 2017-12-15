@@ -1,28 +1,46 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedDate, FormattedMessage} from 'react-intl';
+import {browserHistory, Link} from 'react-router';
+
+import * as GlobalActions from 'actions/global_actions.jsx';
+
 import PostMessageContainer from 'components/post_view/post_message_view';
-import UserProfile from './user_profile.jsx';
 import FileAttachmentListContainer from 'components/file_attachment_list';
-import ProfilePicture from './profile_picture.jsx';
+
 import CommentIcon from 'components/common/comment_icon.jsx';
 import DotMenu from 'components/dot_menu';
 import PostFlagIcon from 'components/post_view/post_flag_icon.jsx';
-import PostBodyAdditionalContent from 'components/post_view/post_body_additional_content.jsx';
-
 import TeamStore from 'stores/team_store.jsx';
 
-import * as GlobalActions from 'actions/global_actions.jsx';
-import * as Utils from 'utils/utils.jsx';
-import * as PostUtils from 'utils/post_utils.jsx';
 import Constants from 'utils/constants.jsx';
+import * as PostUtils from 'utils/post_utils.jsx';
+import * as Utils from 'utils/utils.jsx';
 
-import React from 'react';
-import PropTypes from 'prop-types';
-import {FormattedMessage, FormattedDate} from 'react-intl';
-import {browserHistory, Link} from 'react-router/es6';
+import ProfilePicture from './profile_picture.jsx';
+import UserProfile from './user_profile.jsx';
 
 export default class SearchResultsItem extends React.Component {
+    static propTypes = {
+        post: PropTypes.object,
+        lastPostCount: PropTypes.number,
+        user: PropTypes.object,
+        channel: PropTypes.object,
+        compactDisplay: PropTypes.bool,
+        isMentionSearch: PropTypes.bool,
+        isFlaggedSearch: PropTypes.bool,
+        term: PropTypes.string,
+        useMilitaryTime: PropTypes.bool.isRequired,
+        shrink: PropTypes.func,
+        isFlagged: PropTypes.bool,
+        isBusy: PropTypes.bool,
+        status: PropTypes.string,
+        onSelect: PropTypes.func
+    };
+
     constructor(props) {
         super(props);
 
@@ -56,15 +74,15 @@ export default class SearchResultsItem extends React.Component {
     }
 
     componentDidMount() {
-        window.addEventListener('resize', () => {
-            Utils.updateWindowDimensions(this);
-        });
+        window.addEventListener('resize', this.onUpdateWindowDimensions);
     }
 
     componentWillUnmount() {
-        window.removeEventListener('resize', () => {
-            Utils.updateWindowDimensions(this);
-        });
+        window.removeEventListener('resize', this.onUpdateWindowDimensions);
+    }
+
+    onUpdateWindowDimensions = () => {
+        Utils.updateWindowDimensions(this);
     }
 
     shrinkSidebar() {
@@ -75,12 +93,12 @@ export default class SearchResultsItem extends React.Component {
 
     handleFocusRHSClick(e) {
         e.preventDefault();
-        GlobalActions.emitPostFocusRightHandSideFromSearch(this.props.post, this.props.isMentionSearch);
+        this.props.onSelect(this.props.post);
     }
 
     handleJumpClick() {
         if (Utils.isMobile()) {
-            GlobalActions.toggleSideBarAction(false);
+            GlobalActions.emitCloseRightHandSide();
         }
 
         this.shrinkSidebar();
@@ -94,10 +112,13 @@ export default class SearchResultsItem extends React.Component {
     }
 
     timeTag(post) {
+        const date = Utils.getDateForUnixTicks(post.create_at);
+
         return (
             <time
                 className='search-item-time'
-                dateTime={Utils.getDateForUnixTicks(post.create_at).toISOString()}
+                dateTime={date.toISOString()}
+                title={date}
             >
                 <FormattedDate
                     value={post.create_at}
@@ -255,15 +276,13 @@ export default class SearchResultsItem extends React.Component {
             );
 
             message = (
-                <PostBodyAdditionalContent post={post}>
-                    <PostMessageContainer
-                        post={post}
-                        options={{
-                            searchTerm: this.props.term,
-                            mentionHighlight: this.props.isMentionSearch
-                        }}
-                    />
-                </PostBodyAdditionalContent>
+                <PostMessageContainer
+                    post={post}
+                    options={{
+                        searchTerm: this.props.term,
+                        mentionHighlight: this.props.isMentionSearch
+                    }}
+                />
             );
         }
 
@@ -330,19 +349,3 @@ export default class SearchResultsItem extends React.Component {
         );
     }
 }
-
-SearchResultsItem.propTypes = {
-    post: PropTypes.object,
-    lastPostCount: PropTypes.number,
-    user: PropTypes.object,
-    channel: PropTypes.object,
-    compactDisplay: PropTypes.bool,
-    isMentionSearch: PropTypes.bool,
-    isFlaggedSearch: PropTypes.bool,
-    term: PropTypes.string,
-    useMilitaryTime: PropTypes.bool.isRequired,
-    shrink: PropTypes.func,
-    isFlagged: PropTypes.bool,
-    isBusy: PropTypes.bool,
-    status: PropTypes.string
-};

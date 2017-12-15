@@ -1,10 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import React from 'react';
 import PropTypes from 'prop-types';
-import {Link} from 'react-router';
+import React from 'react';
 import {FormattedMessage} from 'react-intl';
+import {Link} from 'react-router';
 
 import DeleteIntegration from './delete_integration.jsx';
 
@@ -108,15 +108,15 @@ export default class InstalledCommand extends React.PureComponent {
         if (this.props.canChange) {
             actions = (
                 <div className='item-actions'>
-                    <a
-                        href='#'
+                    <button
+                        className='style--none color--link'
                         onClick={this.handleRegenToken}
                     >
                         <FormattedMessage
                             id='installed_integrations.regenToken'
                             defaultMessage='Regenerate Token'
                         />
-                    </a>
+                    </button>
                     {' - '}
                     <Link to={`/${this.props.team.name}/integrations/commands/edit?id=${command.id}`}>
                         <FormattedMessage

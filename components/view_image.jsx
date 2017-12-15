@@ -1,79 +1,92 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import $ from 'jquery';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {Modal} from 'react-bootstrap';
 
-import * as GlobalActions from 'actions/global_actions.jsx';
+import {getFilePreviewUrl, getFileUrl} from 'mattermost-redux/utils/file_utils';
 
-import * as FileUtils from 'utils/file_utils';
-import * as Utils from 'utils/utils.jsx';
+import * as GlobalActions from 'actions/global_actions';
 
-import Constants from 'utils/constants.jsx';
+import Constants from 'utils/constants';
+import * as Utils from 'utils/utils';
+
+import AudioVideoPreview from 'components/audio_video_preview';
+import CodePreview from 'components/code_preview';
+import FileInfoPreview from 'components/file_info_preview';
+import ImagePreview from 'components/image_preview';
+import LoadingImagePreview from 'components/loading_image_preview';
+import PDFPreview from 'components/pdf_preview';
+import ViewImagePopoverBar from 'components/view_image_popover_bar';
+
 const KeyCodes = Constants.KeyCodes;
 
-import {getFileUrl, getFilePreviewUrl} from 'mattermost-redux/utils/file_utils';
+export default class ViewImageModal extends React.PureComponent {
+    static propTypes = {
 
-import AudioVideoPreview from './audio_video_preview.jsx';
-import CodePreview from './code_preview.jsx';
-import FileInfoPreview from './file_info_preview.jsx';
-import PDFPreview from './pdf_preview.jsx';
-import ViewImagePopoverBar from './view_image_popover_bar.jsx';
+        /**
+         * Set whether to show this modal or not
+         */
+        show: PropTypes.bool.isRequired,
 
-import loadingGif from 'images/load.gif';
+        /**
+         * Function to call when this modal is dismissed
+         **/
+        onModalDismissed: PropTypes.func.isRequired,
 
-export default class ViewImageModal extends React.Component {
+        /**
+         * List of FileInfo to view
+         **/
+        fileInfos: PropTypes.arrayOf(PropTypes.object).isRequired,
+
+        /**
+         * The index number of starting image
+         **/
+        startIndex: PropTypes.number.isRequired
+    };
+
+    static defaultProps = {
+        show: false,
+        fileInfos: [],
+        startIndex: 0
+    };
+
     constructor(props) {
         super(props);
 
-        this.showImage = this.showImage.bind(this);
-        this.loadImage = this.loadImage.bind(this);
-
-        this.handleNext = this.handleNext.bind(this);
-        this.handlePrev = this.handlePrev.bind(this);
-        this.handleKeyPress = this.handleKeyPress.bind(this);
-
-        this.onModalShown = this.onModalShown.bind(this);
-        this.onModalHidden = this.onModalHidden.bind(this);
-
-        this.handleGetPublicLink = this.handleGetPublicLink.bind(this);
-        this.onMouseEnterImage = this.onMouseEnterImage.bind(this);
-        this.onMouseLeaveImage = this.onMouseLeaveImage.bind(this);
-
         this.state = {
-            imgId: this.props.startId,
-            imgHeight: '100%',
+            imageIndex: this.props.startIndex,
+            imageHeight: '100%',
             loaded: Utils.fillArray(false, this.props.fileInfos.length),
             progress: Utils.fillArray(0, this.props.fileInfos.length),
             showFooter: false
         };
     }
 
-    handleNext(e) {
+    handleNext = (e) => {
         if (e) {
             e.stopPropagation();
         }
-        let id = this.state.imgId + 1;
+        let id = this.state.imageIndex + 1;
         if (id > this.props.fileInfos.length - 1) {
             id = 0;
         }
         this.showImage(id);
     }
 
-    handlePrev(e) {
+    handlePrev = (e) => {
         if (e) {
             e.stopPropagation();
         }
-        let id = this.state.imgId - 1;
+        let id = this.state.imageIndex - 1;
         if (id < 0) {
             id = this.props.fileInfos.length - 1;
         }
         this.showImage(id);
     }
 
-    handleKeyPress(e) {
+    handleKeyPress = (e) => {
         if (e.keyCode === KeyCodes.RIGHT) {
             this.handleNext();
         } else if (e.keyCode === KeyCodes.LEFT) {
@@ -81,14 +94,14 @@ export default class ViewImageModal extends React.Component {
         }
     }
 
-    onModalShown(nextProps) {
-        $(window).on('keyup', this.handleKeyPress);
+    onModalShown = (nextProps) => {
+        document.addEventListener('keyup', this.handleKeyPress);
 
-        this.showImage(nextProps.startId);
+        this.showImage(nextProps.startIndex);
     }
 
-    onModalHidden() {
-        $(window).off('keyup', this.handleKeyPress);
+    onModalHidden = () => {
+        document.addEventListener('keyup', this.handleKeyPress);
 
         if (this.refs.video) {
             this.refs.video.stop();
@@ -110,18 +123,18 @@ export default class ViewImageModal extends React.Component {
         }
     }
 
-    showImage(id) {
-        this.setState({imgId: id});
+    showImage = (id) => {
+        this.setState({imageIndex: id});
 
-        const imgHeight = $(window).height() - 100;
-        this.setState({imgHeight});
+        const imageHeight = window.innerHeight - 100;
+        this.setState({imageHeight});
 
         if (!this.state.loaded[id]) {
             this.loadImage(id);
         }
     }
 
-    loadImage(index) {
+    loadImage = (index) => {
         const fileInfo = this.props.fileInfos[index];
         const fileType = Utils.getFileType(fileInfo.extension);
 
@@ -167,39 +180,34 @@ export default class ViewImageModal extends React.Component {
         });
     }
 
-    handleGetPublicLink() {
+    handleGetPublicLink = () => {
         this.props.onModalDismissed();
 
-        GlobalActions.showGetPublicLinkModal(this.props.fileInfos[this.state.imgId].id);
+        GlobalActions.showGetPublicLinkModal(this.props.fileInfos[this.state.imageIndex].id);
     }
 
-    onMouseEnterImage() {
+    onMouseEnterImage = () => {
         this.setState({showFooter: true});
     }
 
-    onMouseLeaveImage() {
+    onMouseLeaveImage = () => {
         this.setState({showFooter: false});
     }
 
     render() {
-        if (this.props.fileInfos.length < 1 || this.props.fileInfos.length - 1 < this.state.imgId) {
+        if (this.props.fileInfos.length < 1 || this.props.fileInfos.length - 1 < this.state.imageIndex) {
             return null;
         }
 
-        const fileInfo = this.props.fileInfos[this.state.imgId];
+        const fileInfo = this.props.fileInfos[this.state.imageIndex];
         const fileUrl = getFileUrl(fileInfo.id);
 
         let content;
-        if (this.state.loaded[this.state.imgId]) {
+        if (this.state.loaded[this.state.imageIndex]) {
             const fileType = Utils.getFileType(fileInfo.extension);
 
             if (fileType === 'image' || fileType === 'svg') {
-                content = (
-                    <ImagePreview
-                        fileInfo={fileInfo}
-                        fileUrl={fileUrl}
-                    />
-                );
+                content = <ImagePreview fileInfo={fileInfo}/>;
             } else if (fileType === 'video' || fileType === 'audio') {
                 content = (
                     <AudioVideoPreview
@@ -231,12 +239,13 @@ export default class ViewImageModal extends React.Component {
             }
         } else {
             // display a progress indicator when the preview for an image is still loading
-            const progress = Math.floor(this.state.progress[this.state.imgId]);
+            const loading = Utils.localizeMessage('view_image.loading', 'Loading');
+            const progress = Math.floor(this.state.progress[this.state.imageIndex]);
 
             content = (
                 <LoadingImagePreview
+                    loading={loading}
                     progress={progress}
-                    loading={Utils.localizeMessage('view_image.loading', 'Loading ')}
                 />
             );
         }
@@ -246,6 +255,7 @@ export default class ViewImageModal extends React.Component {
         if (this.props.fileInfos.length > 1) {
             leftArrow = (
                 <a
+                    id='previewArrowLeft'
                     ref='previewArrowLeft'
                     className='modal-prev-bar'
                     href='#'
@@ -257,6 +267,7 @@ export default class ViewImageModal extends React.Component {
 
             rightArrow = (
                 <a
+                    id='previewArrowRight'
                     ref='previewArrowRight'
                     className='modal-next-bar'
                     href='#'
@@ -301,7 +312,7 @@ export default class ViewImageModal extends React.Component {
                             </div>
                             <ViewImagePopoverBar
                                 show={this.state.showFooter}
-                                fileId={this.state.imgId}
+                                fileIndex={this.state.imageIndex}
                                 totalFiles={this.props.fileInfos.length}
                                 filename={fileInfo.name}
                                 fileURL={fileUrl}
@@ -316,70 +327,3 @@ export default class ViewImageModal extends React.Component {
         );
     }
 }
-
-ViewImageModal.defaultProps = {
-    show: false,
-    fileInfos: [],
-    startId: 0
-};
-ViewImageModal.propTypes = {
-    show: PropTypes.bool.isRequired,
-    onModalDismissed: PropTypes.func.isRequired,
-    fileInfos: PropTypes.arrayOf(PropTypes.object).isRequired,
-    startId: PropTypes.number
-};
-
-function LoadingImagePreview({progress, loading}) {
-    let progressView = null;
-    if (progress) {
-        progressView = (
-            <span className='loader-percent'>
-                {loading + progress + '%'}
-            </span>
-        );
-    }
-
-    return (
-        <div className='view-image__loading'>
-            <img
-                className='loader-image'
-                src={loadingGif}
-            />
-            {progressView}
-        </div>
-    );
-}
-
-LoadingImagePreview.propTypes = {
-    progress: PropTypes.number,
-    loading: PropTypes.string
-};
-
-function ImagePreview({fileInfo, fileUrl}) {
-    let previewUrl;
-    if (fileInfo.has_preview_image) {
-        previewUrl = getFilePreviewUrl(fileInfo.id);
-    } else {
-        previewUrl = fileUrl;
-    }
-
-    if (!FileUtils.canDownloadFiles()) {
-        return <img src={previewUrl}/>;
-    }
-
-    return (
-        <a
-            href={fileUrl}
-            target='_blank'
-            rel='noopener noreferrer'
-            download={true}
-        >
-            <img src={previewUrl}/>
-        </a>
-    );
-}
-
-ImagePreview.propTypes = {
-    fileInfo: PropTypes.object.isRequired,
-    fileUrl: PropTypes.string.isRequired
-};

@@ -1,15 +1,15 @@
 // Copyright (c) 2017 Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import BackstageList from 'components/backstage/components/backstage_list.jsx';
-import InstalledCommand from '../installed_command.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
 
 import * as Utils from 'utils/utils.jsx';
 
-import PropTypes from 'prop-types';
+import BackstageList from 'components/backstage/components/backstage_list.jsx';
 
-import React from 'react';
-import {FormattedMessage} from 'react-intl';
+import InstalledCommand from '../installed_command.jsx';
 
 export default class InstalledCommands extends React.PureComponent {
     static propTypes = {
@@ -81,21 +81,23 @@ export default class InstalledCommands extends React.PureComponent {
     }
 
     render() {
-        const commands = this.props.commands.sort(this.commandCompare).map((command) => {
-            const canChange = this.props.isAdmin || this.props.user.id === command.creator_id;
+        const commands = this.props.commands.
+            filter((command) => command.team_id === this.props.team.id).
+            sort(this.commandCompare).map((command) => {
+                const canChange = this.props.isAdmin || this.props.user.id === command.creator_id;
 
-            return (
-                <InstalledCommand
-                    key={command.id}
-                    team={this.props.team}
-                    command={command}
-                    onRegenToken={this.regenCommandToken}
-                    onDelete={this.deleteCommand}
-                    creator={this.props.users[command.creator_id] || {}}
-                    canChange={canChange}
-                />
-            );
-        });
+                return (
+                    <InstalledCommand
+                        key={command.id}
+                        team={this.props.team}
+                        command={command}
+                        onRegenToken={this.regenCommandToken}
+                        onDelete={this.deleteCommand}
+                        creator={this.props.users[command.creator_id] || {}}
+                        canChange={canChange}
+                    />
+                );
+            });
 
         return (
             <BackstageList

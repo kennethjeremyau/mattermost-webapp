@@ -1,47 +1,49 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import UserProfile from './user_profile.jsx';
-import FileAttachmentListContainer from 'components/file_attachment_list';
-import PostMessageContainer from 'components/post_view/post_message_view';
-import ProfilePicture from 'components/profile_picture.jsx';
-import ReactionListContainer from 'components/post_view/reaction_list';
-import PostFlagIcon from 'components/post_view/post_flag_icon.jsx';
-import FailedPostOptions from 'components/post_view/failed_post_options';
-import DotMenu from 'components/dot_menu';
-import EmojiPickerOverlay from 'components/emoji_picker/emoji_picker_overlay.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+import {Link} from 'react-router';
 
 import {addReaction, emitEmojiPosted} from 'actions/post_actions.jsx';
-
 import TeamStore from 'stores/team_store.jsx';
 
-import * as Utils from 'utils/utils.jsx';
-import * as PostUtils from 'utils/post_utils.jsx';
-
 import Constants from 'utils/constants.jsx';
+import * as PostUtils from 'utils/post_utils.jsx';
+import * as Utils from 'utils/utils.jsx';
 
-import React from 'react';
-import PropTypes from 'prop-types';
-import {Link} from 'react-router/es6';
-import {FormattedMessage} from 'react-intl';
+import DotMenu from 'components/dot_menu';
+import EmojiPickerOverlay from 'components/emoji_picker/emoji_picker_overlay.jsx';
+import FileAttachmentListContainer from 'components/file_attachment_list';
+import FailedPostOptions from 'components/post_view/failed_post_options';
+import PostBodyAdditionalContent from 'components/post_view/post_body_additional_content.jsx';
+import PostFlagIcon from 'components/post_view/post_flag_icon.jsx';
+import PostMessageContainer from 'components/post_view/post_message_view';
+import ReactionListContainer from 'components/post_view/reaction_list';
+import ProfilePicture from 'components/profile_picture.jsx';
+
+import UserProfile from './user_profile.jsx';
 
 export default class RhsComment extends React.Component {
     static propTypes = {
         post: PropTypes.object,
         lastPostCount: PropTypes.number,
-        user: PropTypes.object.isRequired,
+        user: PropTypes.object,
         currentUser: PropTypes.object.isRequired,
         compactDisplay: PropTypes.bool,
         useMilitaryTime: PropTypes.bool.isRequired,
         isFlagged: PropTypes.bool,
         status: PropTypes.string,
         isBusy: PropTypes.bool,
-        removePost: PropTypes.func.isRequired
+        removePost: PropTypes.func.isRequired,
+        previewCollapsed: PropTypes.string.isRequired,
+        previewEnabled: PropTypes.bool.isRequired,
+        isEmbedVisible: PropTypes.bool
     };
 
     constructor(props) {
         super(props);
-
         this.removePost = this.removePost.bind(this);
         this.reactEmojiClick = this.reactEmojiClick.bind(this);
         this.handleDropdownOpened = this.handleDropdownOpened.bind(this);
@@ -73,14 +75,13 @@ export default class RhsComment extends React.Component {
 
     createRemovePostButton() {
         return (
-            <a
-                href='#'
-                className='post__remove theme'
+            <button
+                className='post__remove theme color--link style--none'
                 type='button'
                 onClick={this.removePost}
             >
                 {'×'}
-            </a>
+            </button>
         );
     }
 
@@ -125,16 +126,31 @@ export default class RhsComment extends React.Component {
             return true;
         }
 
+        if (nextProps.isEmbedVisible !== this.props.isEmbedVisible) {
+            return true;
+        }
+
+        if (this.props.previewEnabled !== nextProps.previewEnabled) {
+            return true;
+        }
+
+        if (this.props.user.last_picture_update !== nextProps.user.last_picture_update) {
+            return true;
+        }
+
         return false;
     }
 
     timeTag(post, timeOptions) {
+        const date = Utils.getDateForUnixTicks(post.create_at);
+
         return (
             <time
                 className='post__time'
-                dateTime={Utils.getDateForUnixTicks(post.create_at).toISOString()}
+                dateTime={date.toISOString()}
+                title={date}
             >
-                {Utils.getDateForUnixTicks(post.create_at).toLocaleString('en', timeOptions)}
+                {date.toLocaleString('en', timeOptions)}
             </time>
         );
     }
@@ -145,7 +161,6 @@ export default class RhsComment extends React.Component {
             (
                 <Link
                     to={`/${this.state.currentTeamDisplayName}/pl/${post.id}`}
-                    target='_blank'
                     className='post__permalink'
                 >
                     {this.timeTag(post, timeOptions)}
@@ -308,9 +323,7 @@ export default class RhsComment extends React.Component {
                     height='36'
                 />
             );
-        }
-
-        if (isSystemMessage) {
+        } else if (isSystemMessage) {
             profilePic = (
                 <span
                     className='icon'
@@ -366,9 +379,8 @@ export default class RhsComment extends React.Component {
                         spaceRequiredAbove={342}
                         spaceRequiredBelow={342}
                     />
-                    <a
-                        href='#'
-                        className='reacticon__container reaction'
+                    <button
+                        className='reacticon__container reaction color--link style--none'
                         onClick={this.toggleEmojiPicker}
                         ref={'rhs_reacticon_' + post.id}
                     >
@@ -376,7 +388,7 @@ export default class RhsComment extends React.Component {
                             className='icon icon--emoji'
                             dangerouslySetInnerHTML={{__html: Constants.EMOJI_ICON_SVG}}
                         />
-                    </a>
+                    </button>
                 </span>
 
             );
@@ -459,11 +471,18 @@ export default class RhsComment extends React.Component {
                         <div className='post__body' >
                             <div className={postClass}>
                                 {failedPostOptions}
-                                <PostMessageContainer
+                                <PostBodyAdditionalContent
                                     post={post}
-                                    isRHS={true}
-                                    hasMention={true}
-                                />
+                                    previewCollapsed={this.props.previewCollapsed}
+                                    previewEnabled={this.props.previewEnabled}
+                                    isEmbedVisible={this.props.isEmbedVisible}
+                                >
+                                    <PostMessageContainer
+                                        post={post}
+                                        isRHS={true}
+                                        hasMention={true}
+                                    />
+                                </PostBodyAdditionalContent>
                             </div>
                             {fileAttachment}
                             <ReactionListContainer post={post}/>

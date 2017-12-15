@@ -1,14 +1,15 @@
 // Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import ConfirmModal from 'components/confirm_modal.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+
+import {Preferences} from 'mattermost-redux/constants';
 
 import {toTitleCase} from 'utils/utils.jsx';
 
-import React from 'react';
-import PropTypes from 'prop-types';
-import {FormattedMessage} from 'react-intl';
-import {Preferences} from 'mattermost-redux/constants';
+import ConfirmModal from 'components/confirm_modal.jsx';
 
 export default class ResetStatusModal extends React.PureComponent {
     static propTypes = {
@@ -83,13 +84,14 @@ export default class ResetStatusModal extends React.PureComponent {
     }
 
     render() {
-        const userStatus = toTitleCase(this.state.currentUserStatus.status || '');
+        const userStatus = this.state.currentUserStatus.status || '';
+        const userStatusId = 'modal.manaul_status.title_' + userStatus;
         const manualStatusTitle = (
             <FormattedMessage
-                id='modal.manaul_status.title'
+                id={userStatusId}
                 defaultMessage='Your status is set to "{status}"'
                 values={{
-                    status: userStatus
+                    status: toTitleCase(userStatus)
                 }}
             />
         );
@@ -107,13 +109,13 @@ export default class ResetStatusModal extends React.PureComponent {
                 defaultMessage='Yes, set my status to "Online"'
             />
         );
-
+        const manualStatusId = 'modal.manual_status.cancel_' + userStatus;
         const manualStatusCancel = (
             <FormattedMessage
-                id='modal.manaul_status.cancel'
+                id={manualStatusId}
                 defaultMessage='No, keep it as "{status}"'
                 values={{
-                    status: userStatus
+                    status: toTitleCase(userStatus)
                 }}
             />
         );

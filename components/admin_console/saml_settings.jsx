@@ -2,19 +2,18 @@
 // See License.txt for license information.
 
 import React from 'react';
+import {FormattedHTMLMessage, FormattedMessage} from 'react-intl';
 
-import AdminSettings from './admin_settings.jsx';
-import BooleanSetting from './boolean_setting.jsx';
-import TextSetting from './text_setting.jsx';
-import FileUploadSetting from './file_upload_setting.jsx';
-import RemoveFileSetting from './remove_file_setting.jsx';
-
-import {FormattedMessage, FormattedHTMLMessage} from 'react-intl';
-import SettingsGroup from './settings_group.jsx';
+import * as AdminActions from 'actions/admin_actions.jsx';
 
 import * as Utils from 'utils/utils.jsx';
 
-import * as AdminActions from 'actions/admin_actions.jsx';
+import AdminSettings from './admin_settings.jsx';
+import BooleanSetting from './boolean_setting.jsx';
+import FileUploadSetting from './file_upload_setting.jsx';
+import RemoveFileSetting from './remove_file_setting.jsx';
+import SettingsGroup from './settings_group.jsx';
+import TextSetting from './text_setting.jsx';
 
 export default class SamlSettings extends AdminSettings {
     constructor(props) {
@@ -29,6 +28,7 @@ export default class SamlSettings extends AdminSettings {
 
     getConfigFromState(config) {
         config.SamlSettings.Enable = this.state.enable;
+        config.SamlSettings.EnableSyncWithLdap = this.state.enableSyncWithLdap;
         config.SamlSettings.Verify = this.state.verify;
         config.SamlSettings.Encrypt = this.state.encrypt;
         config.SamlSettings.IdpUrl = this.state.idpUrl;
@@ -52,13 +52,22 @@ export default class SamlSettings extends AdminSettings {
     getStateFromConfig(config) {
         const settings = config.SamlSettings;
 
+        // pre-populate Service Provider Login URL page
+        const siteUrl = config.ServiceSettings.SiteURL;
+        let consumerServiceUrl = settings.AssertionConsumerServiceURL;
+        if (siteUrl.length > 0 && consumerServiceUrl.length === 0) {
+            consumerServiceUrl = siteUrl + '/login/sso/saml';
+        }
+
         return {
+            siteUrlSet: siteUrl.length > 0,
             enable: settings.Enable,
+            enableSyncWithLdap: settings.EnableSyncWithLdap,
             verify: settings.Verify,
             encrypt: settings.Encrypt,
             idpUrl: settings.IdpUrl,
             idpDescriptorUrl: settings.IdpDescriptorUrl,
-            assertionConsumerServiceURL: settings.AssertionConsumerServiceURL,
+            assertionConsumerServiceURL: consumerServiceUrl,
             idpCertificateFile: settings.IdpCertificateFile,
             publicCertificateFile: settings.PublicCertificateFile,
             privateKeyFile: settings.PrivateKeyFile,
@@ -303,16 +312,25 @@ export default class SamlSettings extends AdminSettings {
             );
         }
 
+        let consumerServiceUrlHelp;
+        if (this.state.siteUrlSet) {
+            consumerServiceUrlHelp = (
+                <FormattedMessage
+                    id='admin.saml.assertionConsumerServiceURLPopulatedDesc'
+                    defaultMessage='This field is also known as the Assertion Consumer Service URL.'
+                />
+            );
+        } else {
+            consumerServiceUrlHelp = (
+                <FormattedMessage
+                    id='admin.saml.assertionConsumerServiceURLDesc'
+                    defaultMessage='Enter https://<your-mattermost-url>/login/sso/saml. Make sure you use HTTP or HTTPS in your URL depending on your server configuration. This field is also known as the Assertion Consumer Service URL.'
+                />
+            );
+        }
+
         return (
             <SettingsGroup>
-                <div className='banner'>
-                    <div className='banner__content'>
-                        <FormattedHTMLMessage
-                            id='admin.saml.bannerDesc'
-                            defaultMessage='User attributes in SAML server, including user deactivation or removal, are updated in Mattermost during user login. Learn more at: <a href=\"https://docs.mattermost.com/deployment/sso-saml.html\">https://docs.mattermost.com/deployment/sso-saml.html</a>'
-                        />
-                    </div>
-                </div>
                 <BooleanSetting
                     id='enable'
                     label={
@@ -329,6 +347,24 @@ export default class SamlSettings extends AdminSettings {
                     }
                     value={this.state.enable}
                     onChange={this.handleChange}
+                />
+                <BooleanSetting
+                    id='enableSyncWithLdap'
+                    label={
+                        <FormattedMessage
+                            id='admin.saml.enableSyncWithLdapTitle'
+                            defaultMessage='Enable Synchronizing SAML Accounts With AD/LDAP:'
+                        />
+                    }
+                    helpText={
+                        <FormattedHTMLMessage
+                            id='admin.saml.enableSyncWithLdapDescription'
+                            defaultMessage='When true, Mattermost periodically synchronizes SAML user attributes, including user deactivation and removal, from AD/LDAP. Enable and configure synchronization settings at <strong>Authentication > AD/LDAP</strong>. When false, user attributes are updated from SAML during user login. See <a href="https://about.mattermost.com/default-saml-ldap-sync" target="_blank">documentation</a> to learn more.'
+                        />
+                    }
+                    value={this.state.enableSyncWithLdap}
+                    onChange={this.handleChange}
+                    disabled={!this.state.enable}
                 />
                 <TextSetting
                     id='idpUrl'
@@ -396,15 +432,10 @@ export default class SamlSettings extends AdminSettings {
                         />
                     }
                     placeholder={Utils.localizeMessage('admin.saml.assertionConsumerServiceURLEx', 'Ex "https://<your-mattermost-url>/login/sso/saml"')}
-                    helpText={
-                        <FormattedMessage
-                            id='admin.saml.assertionConsumerServiceURLDesc'
-                            defaultMessage='Enter https://<your-mattermost-url>/login/sso/saml. Make sure you use HTTP or HTTPS in your URL depending on your server configuration. This field is also known as the Assertion Consumer Service URL.'
-                        />
-                    }
+                    helpText={consumerServiceUrlHelp}
                     value={this.state.assertionConsumerServiceURL}
                     onChange={this.handleChange}
-                    disabled={!this.state.enable || !this.state.verify}
+                    disabled={!this.state.enable || !this.state.verify || this.state.siteUrlSet}
                 />
                 <BooleanSetting
                     id='encrypt'

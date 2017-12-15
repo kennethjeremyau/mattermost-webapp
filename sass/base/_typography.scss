@@ -17,6 +17,16 @@ a {
     }
 }
 
+.color--link {
+    color: $link-color;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+        text-decoration: underline;
+    }
+}
+
 body {
     @include font-smoothing;
     font-family: 'Open Sans', sans-serif;
@@ -51,6 +61,10 @@ body {
 
 .font-weight--normal {
     font-weight: normal;
+}
+
+.cursor--pointer {
+    cursor: pointer;
 }
 
 /* open-sans-300 - latin-ext_latin_cyrillic-ext_greek-ext_greek_cyrillic_vietnamese */

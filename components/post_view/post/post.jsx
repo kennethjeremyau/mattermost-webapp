@@ -1,20 +1,22 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import PostHeader from 'components/post_view/post_header';
-import PostBody from 'components/post_view/post_body';
-import ProfilePicture from 'components/profile_picture.jsx';
+import PropTypes from 'prop-types';
+import React from 'react';
 
-import Constants from 'utils/constants.jsx';
-const ActionTypes = Constants.ActionTypes;
 import {Posts} from 'mattermost-redux/constants';
 
-import * as Utils from 'utils/utils.jsx';
-import * as PostUtils from 'utils/post_utils.jsx';
 import AppDispatcher from 'dispatcher/app_dispatcher.jsx';
 
-import React from 'react';
-import PropTypes from 'prop-types';
+import Constants from 'utils/constants.jsx';
+import * as PostUtils from 'utils/post_utils.jsx';
+import * as Utils from 'utils/utils.jsx';
+
+import PostBody from 'components/post_view/post_body';
+import PostHeader from 'components/post_view/post_header';
+import ProfilePicture from 'components/profile_picture.jsx';
+
+const ActionTypes = Constants.ActionTypes;
 
 export default class Post extends React.PureComponent {
     static propTypes = {
@@ -106,14 +108,15 @@ export default class Post extends React.PureComponent {
     handleCommentClick = (e) => {
         e.preventDefault();
 
-        AppDispatcher.handleServerAction({
-            type: ActionTypes.RECEIVED_POST_SELECTED,
-            postId: Utils.getRootId(this.props.post)
-        });
+        const post = this.props.post;
+        if (!post) {
+            return;
+        }
 
         AppDispatcher.handleServerAction({
-            type: ActionTypes.RECEIVED_SEARCH,
-            results: null
+            type: ActionTypes.RECEIVED_POST_SELECTED,
+            postId: Utils.getRootId(post),
+            channelId: post.channel_id
         });
     }
 
@@ -193,11 +196,11 @@ export default class Post extends React.PureComponent {
     }
 
     render() {
-        const post = this.props.post;
+        const post = this.props.post || {};
         const mattermostLogo = Constants.MATTERMOST_ICON_SVG;
 
         const isSystemMessage = PostUtils.isSystemMessage(post);
-        const fromWebhook = post.props && post.props.from_webhook === 'true';
+        const fromWebhook = post && post.props && post.props.from_webhook === 'true';
 
         let status = this.props.status;
         if (fromWebhook) {
@@ -264,7 +267,7 @@ export default class Post extends React.PureComponent {
             >
                 <div
                     id={'post_' + post.id}
-                    className={this.getClassName(this.props.post, isSystemMessage, fromWebhook)}
+                    className={this.getClassName(post, isSystemMessage, fromWebhook)}
                 >
                     <div className={'post__content ' + centerClass}>
                         {profilePicContainer}

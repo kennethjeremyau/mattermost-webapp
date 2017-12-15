@@ -1,8 +1,10 @@
 // Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
 // See License.txt for license information.
 
-import React from 'react';
 import PropTypes from 'prop-types';
+import React from 'react';
+import {FormattedMessage} from 'react-intl';
+import {Link} from 'react-router';
 
 import TeamStore from 'stores/team_store.jsx';
 
@@ -10,9 +12,7 @@ import {localizeMessage} from 'utils/utils.jsx';
 
 import BackstageHeader from 'components/backstage/components/backstage_header.jsx';
 import ChannelSelect from 'components/channel_select.jsx';
-import {FormattedMessage} from 'react-intl';
 import FormError from 'components/form_error.jsx';
-import {Link} from 'react-router/es6';
 import SpinnerButton from 'components/spinner_button.jsx';
 
 export default class AbstractOutgoingWebhook extends React.Component {
@@ -240,7 +240,7 @@ export default class AbstractOutgoingWebhook extends React.Component {
                             >
                                 <FormattedMessage
                                     id='add_outgoing_webhook.displayName'
-                                    defaultMessage='Display Name'
+                                    defaultMessage='Title'
                                 />
                             </label>
                             <div className='col-md-5 col-sm-8'>
@@ -255,7 +255,7 @@ export default class AbstractOutgoingWebhook extends React.Component {
                                 <div className='form__help'>
                                     <FormattedMessage
                                         id='add_outgoing_webhook.displayName.help'
-                                        defaultMessage='Display name for your incoming webhook made of up to 64 characters.'
+                                        defaultMessage='Choose a title to be displayed on the webhook settings page. Maximum 64 characters.'
                                     />
                                 </div>
                             </div>

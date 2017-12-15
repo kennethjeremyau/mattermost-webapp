@@ -28,6 +28,28 @@
             max-height: 150px;
         }
 
+        .edit-post__actions {
+            display: inline-block;
+            height: 30px;
+            line-height: 34px;
+            position: absolute;
+            right: 18px;
+            text-align: center;
+            top: 24px;
+            width: 30px;
+
+            .icon {
+                @include opacity(.5);
+                cursor: pointer;
+            }
+
+            &:hover {
+                .icon {
+                    @include opacity(.7);
+                }
+            }
+        }
+
         .edit-post-footer {
             display: inline-block;
             font-size: 13px;
@@ -106,6 +128,7 @@
         .custom-textarea {
             border-color: $light-gray;
             color: inherit;
+            padding-right: 30px;
 
             &:focus {
                 border-color: $light-gray;
@@ -600,7 +623,6 @@
     }
 
     .more-modal__name {
-        font-size: .95em;
         font-weight: 600;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -608,7 +630,7 @@
     }
 
     .more-modal__description {
-        @include opacity(.7);
+        @include opacity(.6);
         display: block;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -641,6 +663,25 @@
         opacity: 0;
         text-align: center;
         width: 32px;
+    }
+
+    .more-modal__right {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+
+        .control-label {
+            font-weight: normal;
+            padding: 5px 0 0 5px;
+        }
+    }
+
+    .more-modal__top {
+        display: flex;
+    }
+
+    .more-modal__bottom>.has-error {
+        padding-left: 5px;
     }
 
     p {

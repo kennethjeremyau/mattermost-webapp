@@ -6,7 +6,7 @@
     left: 0;
     position: fixed;
     width: 220px;
-    z-index: 5;
+    z-index: 10;
 
     .error-bar--fixed & {
         height: calc(100% - 22px);
@@ -32,6 +32,10 @@
 
         .icon__globe {
             top: 1px;
+        }
+
+        .icon__archive {
+            top: 2px;
         }
     }
 
@@ -78,7 +82,7 @@
         width: 100%;
 
         button {
-            @include single-transition(all, .15s, ease-in);
+            background: transparent;
             display: block;
             font-weight: 600;
             height: 45px;
@@ -118,10 +122,9 @@
 
     .dropdown-menu {
         max-height: 80vh;
-        max-width: 200px;
+        max-width: 250px;
         overflow-x: hidden;
         overflow-y: auto;
-        width: 200px;
     }
 
     .search__form {
@@ -202,16 +205,31 @@
                 }
             }
 
-            > a {
+            > .nav-more {
                 border-radius: 0;
+                display: block;
                 line-height: 1.5;
                 outline: none;
                 overflow: hidden;
                 padding: 5px 0 5px 17px;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+            }
+
+            > .sidebar-item {
+                @include single-transition(none);
+                border-radius: 0;
+                line-height: 1.5;
+                outline: none;
+                overflow: hidden;
+                padding: 5px 0 5px 17px;
+                text-align: left;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                width: 100%;
 
                 .icon {
+                    &.icon__archive,
                     &.icon__globe,
                     &.icon__lock {
                         @include opacity(.5);
@@ -259,7 +277,7 @@
             }
 
             &.active {
-                a {
+                button,a {
                     &:before {
                         background: $black;
                         content: '';
@@ -272,15 +290,16 @@
                 }
 
                 .icon {
+                    &.icon__archive,
                     &.icon__globe,
                     &.icon__lock {
                         @include opacity(.7);
                     }
                 }
 
-                a,
-                a:hover,
-                a:focus {
+                button,a,
+                button:hover,a:hover,
+                button:focus,a:focus {
                     @include alpha-property(background-color, $black, .1);
                     border-radius: 0;
                     font-weight: 400;

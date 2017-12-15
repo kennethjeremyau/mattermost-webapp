@@ -2,17 +2,18 @@
 // See License.txt for license information.
 
 import $ from 'jquery';
-import React, {Component} from 'react';
+
 import PropTypes from 'prop-types';
+import React, {Component} from 'react';
 
-import DotMenuFlag from './dot_menu_flag.jsx';
-import DotMenuItem from './dot_menu_item.jsx';
-import DotMenuEdit from './dot_menu_edit.jsx';
-
-import * as Utils from 'utils/utils.jsx';
-import * as PostUtils from 'utils/post_utils.jsx';
 import Constants from 'utils/constants.jsx';
 import DelayedAction from 'utils/delayed_action.jsx';
+import * as PostUtils from 'utils/post_utils.jsx';
+import * as Utils from 'utils/utils.jsx';
+
+import DotMenuEdit from './dot_menu_edit.jsx';
+import DotMenuFlag from './dot_menu_flag.jsx';
+import DotMenuItem from './dot_menu_item.jsx';
 
 export default class DotMenu extends Component {
     static propTypes = {
@@ -35,6 +36,11 @@ export default class DotMenu extends Component {
              * Function to unflag the post
              */
             unflagPost: PropTypes.func.isRequired,
+
+            /*
+             * Function to set the edting post
+             */
+            setEditingPost: PropTypes.func.isRequired,
 
             /*
              * Function to pin the post
@@ -73,10 +79,10 @@ export default class DotMenu extends Component {
 
     componentWillReceiveProps(nextProps) {
         if (nextProps.post !== this.props.post) {
-            this.state = {
+            this.setState({
                 canDelete: PostUtils.canDeletePost(nextProps.post),
                 canEdit: PostUtils.canEditPost(nextProps.post, this.editDisableAction)
-            };
+            });
         }
     }
 
@@ -190,6 +196,9 @@ export default class DotMenu extends Component {
                     post={this.props.post}
                     type={type}
                     commentCount={type === 'Post' ? this.props.commentCount : 0}
+                    actions={{
+                        setEditingPost: this.props.actions.setEditingPost
+                    }}
                 />
             );
         }
@@ -212,10 +221,9 @@ export default class DotMenu extends Component {
                 <div
                     id={this.props.idPrefix + '_dropdown' + this.props.post.id}
                 >
-                    <a
+                    <button
                         ref='dropdownToggle'
-                        href='#'
-                        className='dropdown-toggle post__dropdown theme'
+                        className='dropdown-toggle post__dropdown color--link style--none'
                         type='button'
                         data-toggle='dropdown'
                         aria-expanded='false'

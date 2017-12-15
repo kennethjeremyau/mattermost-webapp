@@ -2,10 +2,11 @@
 // See License.txt for license information.
 
 import $ from 'jquery';
+
 import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage} from 'react-intl';
-import {Link} from 'react-router/es6';
+import {Link} from 'react-router';
 
 import {ErrorPageTypes} from 'utils/constants.jsx';
 import * as Utils from 'utils/utils.jsx';
