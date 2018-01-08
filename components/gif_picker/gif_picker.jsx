@@ -62,7 +62,7 @@ export default class GifPicker extends React.Component {
 
     handleCategories() {
         this.setState({
-            action: 'categories'
+            action: 'reactions'
         });
     }
 
@@ -98,10 +98,11 @@ export default class GifPicker extends React.Component {
         const {action} = this.state;
         let component;
         switch (action) {
-        case 'categories':
+        case 'reactions':
             component = (
                 <Categories
                     appProps={appProps}
+                    action={action}
                     onTrending={this.handleTrending}
                     onSearch={this.handleSearch}
                 />
@@ -111,6 +112,7 @@ export default class GifPicker extends React.Component {
             component = (
                 <Search
                     appProps={appProps}
+                    action={action}
                     handleItemClick={this.handleItemClick}
                 />
             );
@@ -119,6 +121,7 @@ export default class GifPicker extends React.Component {
             component = (
                 <Trending
                     appProps={appProps}
+                    action={action}
                     handleItemClick={this.handleItemClick}
                 />
             );
@@ -131,6 +134,7 @@ export default class GifPicker extends React.Component {
             >
                 <App
                     appProps={appProps}
+                    action={action}
                     onTrending={this.handleTrending}
                     onCategories={this.handleCategories}
                     onSearch={this.handleSearch}

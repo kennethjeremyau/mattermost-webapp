@@ -30,6 +30,7 @@ export class App extends Component {
   render() {
     const {
         appProps,
+        action,
         onCategories,
         onSearch,
         onTrending,
@@ -40,6 +41,7 @@ export class App extends Component {
       <div className={appClassName}>
         <Header
             appProps={appProps}
+            action={action}
             onCategories={onCategories}
             onSearch={onSearch}
             onTrending={onTrending}

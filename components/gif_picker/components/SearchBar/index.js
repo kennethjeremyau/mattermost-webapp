@@ -98,14 +98,13 @@ export class SearchBar extends Component {
 
     const searchText = event.target.value
 
-    const { saveSearchBarText } = this.props
+    const { saveSearchBarText, onCategories, action } = this.props
     saveSearchBarText(searchText)
 
     if (searchText === '') {
-      this.showReactions()
+      onCategories()
       // not reactions page or there's no reactions for this search request
-    } else if (location && location.pathname.indexOf('/reactions') === -1 ||
-               !this.isFilteredTags(searchText)) {
+    } else if (action !== 'reactions' || !this.isFilteredTags(searchText)) {
       this.searchTimeout = setTimeout(() => {
         this.triggerSearch(searchText)
       }, 500)
@@ -134,11 +133,6 @@ export class SearchBar extends Component {
     }) : []
 
     return !!filteredTags.length
-  }
-
-  showReactions = () => {
-    const { appProps } = this.props
-    navigateTo(`${appProps.basePath}/reactions`, appProps.enableHistory)
   }
 
   clearSearchHandle = () => {
